@@ -8,7 +8,7 @@ Development hardware: Intel macOS 14.8.2, Node.js 24.21.0, Electron 44.9.2.
 
 The Electron smoke test has 13 groups of interaction and rendering checks. It covers 38-body WebGL 2 rendering, logarithmic depth, time controls, search/warp, scale switching, free flight, Earth grass/beach/ocean views, surface walking and look, terrain removal on return to orbit, persisted settings, texture path rejection, renderer isolation, system overview, solar shaders, HUD, and help. It also enters landing views on Mercury, Venus, Mars, the Moon, Io, Europa, Titan, Enceladus, Pluto, Charon, Ceres, Eris, and Jupiter.
 
-The first full updated-app run passed all 13 groups with no shader errors. The final stationary Earth orbital view reported 60 FPS at Balanced quality with bloom and shadows enabled. This is one local observation, not a guarantee across hardware or scenes. Screenshots and JSON diagnostics are written to `test-output/`.
+The packaged Intel 1.1.0 app passed all 13 groups with no shader errors. The final stationary Earth orbital view reported 60 FPS at Balanced quality with bloom and shadows enabled. This is one local observation, not a guarantee across hardware or scenes. Screenshots and JSON diagnostics are written to `test-output/`.
 
 ## Distribution
 
@@ -19,3 +19,7 @@ The Intel app is tested on physical Intel hardware. Apple Silicon builds are cro
 ## Scope
 
 Terrain is a bounded representative local reconstruction. Earth vegetation and terrain tiles are photographed terrestrial materials; alien ground materials are artistic geological approximations. They are not exact geographic surveys or spacecraft ground photographs. Seventeen global moon/asteroid maps use USGS mission imagery; poorly imaged bodies retain illustrative global maps. Gas giants have cloud-top scenes. Orbits remain approximate within 1800–2050.
+
+## Published release
+
+[Version 1.1.0](https://github.com/gtts-ux/cosmosEngine/releases/tag/v1.1.0) is public with Intel and Apple Silicon DMGs and SHA-256 checksums. Both clean GitHub builds passed the tests, prepared all 45 verified assets, packaged installers, verified DMG integrity, and uploaded the release. [Successful release workflow](https://github.com/gtts-ux/cosmosEngine/actions/runs/39626550246). Both local bundles also passed `codesign --verify --deep --strict` and both local DMGs passed `hdiutil verify`.
