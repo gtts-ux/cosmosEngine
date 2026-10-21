@@ -17,6 +17,7 @@ export const surfaceFragment = /* glsl */`
   #include <common>
   #include <logdepthbuf_pars_fragment>
   uniform sampler2D dayMap, nightMap, normalMap, specMap;
+  uniform vec3 detailCenter;uniform float detailCut;
   uniform vec3 sunDirection, atmosphereColor, ringNormal, center, occluder;
   uniform float hasNight, hasNormal, hasSpecular, hasAtmosphere, radius, ringOuter, shadowEnabled, occluderRadius;
   varying vec2 vUv;
@@ -33,6 +34,7 @@ export const surfaceFragment = /* glsl */`
   }
   void main() {
     #include <logdepthbuf_fragment>
+    if(detailCut>0.0&&dot(normalize(vLocal),detailCenter)>detailCut)discard;
     vec3 geometric=normalize(vNormal);
     vec3 n=hasNormal>0.5?mappedNormal(geometric):geometric;
     vec3 L=normalize(sunDirection), V=normalize(cameraPosition-vPoint);

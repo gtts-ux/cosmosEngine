@@ -49,7 +49,7 @@ async function setupIPC() {
     if (typeof name !== 'string' || !TEXTURES.includes(name)) throw new Error('Unknown texture');
     return `cosmos://app/assets/textures/${name}`;
   });
-  handle('app:version', () => ({ app: app.getVersion(), electron: process.versions.electron, arch: process.arch }));
+  handle('app:version', () => ({ app: app.getVersion(), electron: process.versions.electron, arch: process.arch, testing: !!process.env.COSMOS_TEST_PROFILE }));
   handle('window:action', (action) => {
     if (action === 'close') mainWindow.close();
     else if (action === 'minimize') mainWindow.minimize();

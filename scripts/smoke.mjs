@@ -52,37 +52,68 @@ try {
   const after=(await state()).position;
   assert.ok(Math.hypot(...after.map((v,i)=>v-before[i]))>.001);assert.equal((await state()).mode,'free');
   checks.push('Free flight input moves the floating-origin camera');
-  await page.locator('#land').click();await settle();assert.equal((await state()).mode,'land');
-  await page.waitForFunction(()=>window.__cosmos.diagnostics().landing.visible,{},{timeout:20000});
-  await page.screenshot({path:'test-output/surface.png'});
-  assert.equal((await state()).landing.type,'grass');
-  await page.locator('#universe').click({position:{x:700,y:450}});
-  assert.equal((await state()).mode,'land');
-  const surfaceBefore=(await state()).position;
-  await page.keyboard.down('w');await page.waitForTimeout(400);await page.keyboard.up('w');
-  assert.equal((await state()).mode,'land');assert.ok(Math.hypot(...(await state()).position.map((v,i)=>v-surfaceBefore[i]))>1e-7);
-  await page.mouse.move(730,500);await page.mouse.down();await page.mouse.move(790,490,{steps:5});await page.mouse.up();
-  assert.equal((await state()).landing.visible,true);
-  for(const biome of ['sand','water','grass']){
-    await page.locator(`[data-biome="${biome}"]`).click();
-    await page.waitForFunction(type=>window.__cosmos.diagnostics().landing.visible&&window.__cosmos.diagnostics().landing.type===type,biome,{timeout:20000});
-    await page.waitForTimeout(200);await page.screenshot({path:`test-output/earth-${biome}.png`});
+  // Fixtures put a free-flight camera above real globe coordinates; no Land action.
+  for(const [name,lat,lon,type] of [['Earth',0,-140,'water'],['Earth',23,13,'sand'],['Earth',48,20,'grass'],['Earth',80,-40,'ice'],['Moon',0,0,'rock'],['Mars',0,0,'rock'],['Europa',0,0,'ice'],['Pluto',0,0,'ice']]){
+    await page.evaluate(async({id,lat,lon})=>window.__cosmos.place(id,lat,lon,100),{id:name.toLowerCase(),lat,lon});
+    await page.waitForFunction(({id,type})=>{const d=window.__cosmos.diagnostics();return d.landing.visible&&d.landing.body===id&&d.landing.type===type;},{id:name.toLowerCase(),type},{timeout:20000});
+    d=await state();assert.equal(d.mode,'free');assert.equal(d.shaderError,null);assert.equal(d.landing.error,null);
+    assert.ok(Math.abs(d.landing.latitude-lat)<.01);assert.ok(Math.abs(d.landing.longitude-lon)<.01);
+    await page.screenshot({path:`test-output/auto-${name.toLowerCase()}-${type}.png`});
+    console.log(`Automatic mapped surface verified: ${name} ${type} at ${lat}, ${lon}`);
   }
-  checks.push('Land-only grass, beach, animated ocean, walking, and mouse look');
-  await page.locator('#orbit').click();await settle();
-  assert.equal((await state()).landing.visible,false);
-  checks.push('Surface approach and return to orbit');
-  for(const name of ['Mercury','Venus','Mars','Moon','Io','Europa','Titan','Enceladus','Pluto','Charon','Ceres','Eris','Jupiter']){
+  checks.push('Automatic free-flight surfaces: mapped Earth ocean, Sahara sand, vegetation, ice; Moon, Mars, Europa and Pluto');
+  // Start above the visibility threshold and descend using thrust alone.
+  await page.evaluate(()=>window.__cosmos.place('earth',0,-140,12000,true));
+  await page.waitForTimeout(200);assert.equal((await state()).landing.visible,false);
+  await page.locator('#speed-slider').fill('3.5');await page.locator('#speed-slider').evaluate(el=>el.blur());
+  await page.keyboard.down('w');
+  await page.waitForFunction(()=>window.__cosmos.diagnostics().landing.visible,{},{timeout:15000});
+  await page.keyboard.up('w');
+  assert.equal((await state()).mode,'free');
+  checks.push('Continuous WASD descent activates terrain without pressing Land');
+  // Streaming recenters while flying several kilometres across the same world.
+  await page.evaluate(()=>window.__cosmos.place('earth',23,13,100));
+  await page.waitForFunction(()=>window.__cosmos.diagnostics().landing.visible&&window.__cosmos.diagnostics().landing.type==='sand');
+  await page.locator('#speed-slider').fill('3.5');await page.locator('#speed-slider').evaluate(el=>el.blur());
+  await page.keyboard.down('d');await page.waitForTimeout(3500);await page.keyboard.up('d');
+  await page.waitForTimeout(1000);d=await state();assert.equal(d.mode,'free');assert.equal(d.landing.visible,true);assert.equal(d.landing.body,'earth');assert.ok(Math.abs(d.landing.longitude-13)>.02);
+  checks.push('Surface detail streams while free-flying across kilometres of mapped terrain');
+  const zoomBefore=await state();
+  await page.mouse.move(700,500);await page.keyboard.down('Shift');await page.mouse.wheel(0,-10000);await page.keyboard.up('Shift');
+  await page.waitForFunction(()=>window.__cosmos.diagnostics().zoom===1000);
+  assert.equal((await state()).speed,zoomBefore.speed);
+  await page.keyboard.down('Shift');await page.mouse.wheel(0,10000);await page.keyboard.up('Shift');
+  await page.waitForFunction(()=>window.__cosmos.diagnostics().zoom===.5);
+  await page.locator('#telescope-zoom').click();assert.equal((await state()).zoom,1);
+  checks.push('Shift-scroll telescope clamps at 0.5× and 1000×, preserves throttle, and resets to 1×');
+  await page.evaluate(()=>window.__cosmos.place('moon',0,0,5));
+  await page.waitForFunction(()=>window.__cosmos.diagnostics().landing.body==='moon'&&window.__cosmos.diagnostics().landing.visible);
+  const moonBefore=await state();await page.locator('[data-rate="1000"]').click();await page.waitForTimeout(1000);const moonAfter=await state();
+  await page.locator('#realtime').click();
+  assert.ok(Math.max(...moonBefore.landing.color)-Math.min(...moonBefore.landing.color)<.001);
+  assert.ok(Math.abs(moonAfter.landing.latitude-moonBefore.landing.latitude)<.001);assert.ok(Math.abs(moonAfter.landing.longitude-moonBefore.landing.longitude)<.001);
+  await page.locator('#land').click();await settle();assert.equal((await state()).mode,'land');
+  await page.keyboard.down('w');await page.waitForTimeout(400);await page.keyboard.up('w');
+  assert.equal((await state()).landing.visible,true);
+  await page.keyboard.press('f');assert.equal((await state()).mode,'free');assert.equal((await state()).landing.visible,true);
+  checks.push('Body-fixed free flight follows orbital motion and spin; optional Land and walking remain available');
+  await page.locator('#orbit').click();await settle();assert.equal((await state()).landing.visible,false);
+  for(const name of ['Mercury','Venus','Io','Titan','Enceladus','Charon','Ceres','Eris','Jupiter']){
     await page.locator('#search').fill(name);await page.locator('#search').press('Enter');await settle();
-    assert.equal((await state()).landing.visible,false);
     await page.locator('#land').click();await settle();
     await page.waitForFunction(()=>window.__cosmos.diagnostics().landing.visible,{},{timeout:20000});
     assert.equal((await state()).shaderError,null);assert.equal((await state()).landing.error,null);
-    await page.waitForTimeout(100);
-    if(['Moon','Europa','Titan','Pluto','Jupiter'].includes(name))await page.screenshot({path:`test-output/land-${name.toLowerCase()}.png`});
+    if(['Titan','Jupiter'].includes(name))await page.screenshot({path:`test-output/land-${name.toLowerCase()}.png`});
     console.log(`Landing verified: ${name}`);
   }
-  checks.push('Rocky planets, major moon systems, dwarf planets, and cloud-top landing scenes');
+  checks.push('Mapped rocky planets, moon systems, dwarf planets and gas giant cloud decks');
+  for(const body of BODIES.filter(b=>b.id!=='sun')){
+    await page.evaluate(id=>window.__cosmos.place(id,0,0,30),body.id);
+    await page.waitForFunction(id=>{const d=window.__cosmos.diagnostics();return d.landing.visible&&d.landing.body===id;},body.id,{timeout:20000});
+    assert.equal((await state()).shaderError,null);assert.equal((await state()).landing.error,null);
+  }
+  checks.push('Automatic terrain rendered on all 37 landable catalog bodies, including every included moon and dwarf planet');
+
   await page.locator('#search').fill('Earth');await page.locator('#search').press('Enter');await settle();
   await page.locator('#settings-button').click();
   await page.locator('#quality').selectOption('medium');

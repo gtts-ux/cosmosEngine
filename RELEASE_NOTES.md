@@ -1,14 +1,12 @@
-Explore the solar system and step into detailed landing environments.
+Fly directly to the ground and explore globe-mapped surfaces.
 
-- 38 selectable worlds, including Pluto, Charon, all five recognized dwarf planets, and 21 major moons.
-- Landing-only local terrain: Earth grassland, sandy coast, and animated ocean; regolith, rocky plains, fractured ice, frost, and volcanic surfaces on other worlds.
-- Photographed CC0 albedo, normal, and roughness maps; instanced grass and rocks; terrain relief and craters.
-- Spacecraft-derived USGS global moon mosaics and NASA New Horizons imagery for Pluto.
-- WASD surface movement and mouse look, with a quick return to orbit.
-- Existing free flight, true/balanced scales, search, orbital motion, forward/reverse time, and bloom.
+- Terrain now appears automatically during free-flight approaches on every landable catalog world. Land remains an optional shortcut beneath your current position.
+- Earth ocean, desert/sand, vegetation, exposed rock and ice follow the global map at your latitude and longitude. Surface colors on other worlds follow their own maps.
+- Detailed patches recenter as you travel. Body-fixed relief repeats at the same coordinates; nearby flight follows planetary translation and rotation.
+- Fixed the green Moon: moss colors in the photographed rock material are removed, with neutral lunar lighting and gray map colors.
+- Hold Shift and scroll to adjust telescope magnification from 0.5× to 1000×. Click its HUD indicator to reset to 1×. Telescope scrolling preserves throttle and orbit distance.
+- Ground collision follows rendered triangles, and the surrounding globe remains visible beyond local detail.
 
-Download **x64.dmg** for an Intel Mac, or **arm64.dmg** for Apple Silicon. Open the DMG and drag CosmosEngine-Mac into Applications. macOS 12+ and WebGL 2 are required. No Node.js or internet connection is required to run the installed app.
+Fine relief is reconstructed, not surveyed topography. Earth material boundaries are limited by the installed globe map's resolution. Approximate axial orientations are not geodetically calibrated. Gas giants provide cloud-top views. The 38-object catalog includes major moons and five dwarf planets, including Pluto.
 
-These builds use local ad-hoc signatures and are **not Apple-notarized**. macOS may require you to allow the app through System Settings → Privacy & Security. Do not turn off Gatekeeper globally.
-
-Close-up environments are representative procedural reconstructions using photographed materials, not surveys of the exact point under the globe. Distant, poorly imaged bodies use illustrative global textures. Orbital positions and atmosphere effects remain approximate. Gas giants provide cloud-top views rather than solid ground.
+Download the x64 DMG for Intel Macs or arm64 for Apple Silicon. macOS 12+; local ad-hoc signatures, without Apple notarization. All runtime assets work offline.

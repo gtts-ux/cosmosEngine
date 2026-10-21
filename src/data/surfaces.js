@@ -27,7 +27,7 @@ const profiles = {
 export function surfaceProfile(body,biome='grass') {
   if(GAS_GIANTS.has(body.id))return {type:'cloud',title:'Turbulent cloud tops',tint:body.color,relief:160,air:2};
   if(body.id==='earth') {
-    if(biome==='sand')return {type:'sand',title:'Sandy coastline',tint:'#e9d5aa',relief:4,air:1,shore:true};
+    if(biome==='sand')return {type:'sand',title:'Sand and desert',tint:'#e9d5aa',relief:4,air:1};
     if(biome==='water')return {type:'water',title:'Open ocean',tint:'#156477',relief:0,air:1};
   }
   return {...(profiles[body.id] || (body.kind==='Natural satellite'&&body.parent!=='mars'?ice:rock))};
@@ -44,7 +44,6 @@ export function terrainHeight(x,z,profile,seed) {
   if(profile.type==='water')return 0;
   const broad=(noise2(x/600,z/600,seed)-.5)*profile.relief*2;
   const fine=(noise2(x/70,z/70,seed+13)-.5)*profile.relief*.18;
-  if(profile.shore)return 2+z*.025+(noise2(x/150,z/150,seed)-.5)*2;
   if(profile.type==='cloud')return broad+fine;
   if(profile.type==='ice')return broad+fine-Math.exp(-Math.abs(Math.sin(x/180+Math.sin(z/350)))*25)*4;
   if(profile.type==='rock') {
@@ -59,4 +58,3 @@ export function terrainHeight(x,z,profile,seed) {
   return broad+fine;
 }
 export function terrainExtent(body) {return Math.min(24000,body.radius*1000*.2);}
-export function landingVisible(mode,warping,ready) {return mode==='land'&&!warping&&ready;}

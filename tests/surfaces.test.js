@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BODIES,BY_ID,TEXTURES } from '../src/data/catalog.js';
-import { GROUND_TEXTURES,GAS_GIANTS,surfaceProfile,terrainHeight,terrainExtent,seedFor,landingVisible } from '../src/data/surfaces.js';
+import { GROUND_TEXTURES,GAS_GIANTS,surfaceProfile,terrainHeight,terrainExtent,seedFor } from '../src/data/surfaces.js';
 test('every landable body has a valid finite terrain model',()=>{
   for(const b of BODIES.filter(b=>b.id!=='sun')){
     const p=surfaceProfile(b),seed=seedFor(b.id);assert.ok(p.type&&p.title);assert.ok(p.relief>=0);
@@ -10,13 +10,10 @@ test('every landable body has a valid finite terrain model',()=>{
   }
 });
 test('Earth biomes and gas giant cloud tops are distinct',()=>{
-  assert.equal(surfaceProfile(BY_ID.earth,'grass').type,'grass');assert.equal(surfaceProfile(BY_ID.earth,'sand').shore,true);
+  assert.equal(surfaceProfile(BY_ID.earth,'grass').type,'grass');assert.equal(surfaceProfile(BY_ID.earth,'sand').type,'sand');
   assert.equal(surfaceProfile(BY_ID.earth,'water').type,'water');
   for(const id of GAS_GIANTS)assert.equal(surfaceProfile(BY_ID[id]).type,'cloud');
   assert.equal(surfaceProfile(BY_ID.titan).type,'sand');assert.equal(surfaceProfile(BY_ID.io).type,'volcanic');
-});
-test('land-only visibility requires landing, a completed warp and ready assets',()=>{
-  for(const mode of ['free','orbit','land'])for(const warp of [true,false])for(const ready of [true,false])assert.equal(landingVisible(mode,warp,ready),mode==='land'&&!warp&&ready);
 });
 test('Pluto and all five dwarf planets are searchable with physical scales',()=>{
   for(const id of ['ceres','pluto','eris','haumea','makemake'])assert.equal(BY_ID[id].kind,'Dwarf planet');

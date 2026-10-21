@@ -9,7 +9,7 @@ const $=id=>document.getElementById(id);
 const format=(n,d=0)=>n.toLocaleString('en-US',{maximumFractionDigits:d});
 let universe,flight,settings,selected='earth',activeFilter='planets',hud=true,lastUI=0,fpsFrames=0,fpsTime=0,lastFrame=performance.now(),elapsed=0,measuredFPS=0;
 const clock=new SimulationClock();
-let toastTimer,saveTimer,landBiome='grass';
+let toastTimer,saveTimer;
 function toast(message){
   $('toast').textContent=message;$('toast').hidden=false;
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,3500);
@@ -70,12 +70,7 @@ function updateTargetDistance(){
   $('target-distance').innerHTML=`${distance.toFixed(3)} <small>AU</small>`;
 }
 function modeChanged(mode){
-  document.body.classList.toggle('is-land',mode==='land');
-  $('surface-panel').hidden=mode!=='land';
-  $('earth-biomes').hidden=flight?.target!=='earth';
   $('speed-slider').disabled=mode==='land';
-  if(mode==='land')universe.landing.prepare(BY_ID[flight.target],landBiome);
-  else universe.landing.leave();
   $('mode-badge').textContent=mode==='orbit'?'ORBIT LOCKED':mode==='land'?'SURFACE VIEW':'INERTIAL FLIGHT';
   $('orbit-mode').classList.toggle('active',mode==='orbit');$('free-mode').classList.toggle('active',mode==='free');
   $('control-hint').innerHTML=mode==='land'?'<kbd>WASD</kbd> walk <span>·</span> <kbd>DRAG</kbd> look <span>·</span> <kbd>O</kbd> return to orbit':mode==='orbit'?'<kbd>DRAG</kbd> orbit <span>·</span> <kbd>SCROLL</kbd> zoom <span>·</span> <kbd>H</kbd> hide interface':'<kbd>WASD</kbd> thrust <span>·</span> <kbd>DRAG</kbd> look <span>·</span> <kbd>SCROLL</kbd> speed';
@@ -129,12 +124,8 @@ function attachUI(){
   $('warp').onclick=()=>flight.visit(selected);
   $('orbit').onclick=()=>flight.visit(selected);
   $('land').onclick=land;
-  for(const button of document.querySelectorAll('[data-biome]'))button.onclick=()=>{
-    landBiome=button.dataset.biome;
-    for(const item of document.querySelectorAll('[data-biome]'))item.classList.toggle('active',item===button);
-    flight.landWalk.set(0,0);universe.landing.prepare(BY_ID[flight.target],landBiome);
-  };
-  $('surface-exit').onclick=()=>flight.visit(selected);
+  $('surface-exit').onclick=()=>flight.visit(universe.landing.body?.id||selected);
+  $('telescope-zoom').onclick=()=>{flight.camera.zoom=1;flight.camera.updateProjectionMatrix();};
   $('orbit-mode').onclick=()=>flight.visit(selected);
   $('free-mode').onclick=()=>{flight.free();toast('WASD to fly · drag to look · scroll to change speed');};
   $('speed-slider').oninput=e=>flight.setSpeed(e.target.value);
@@ -212,10 +203,16 @@ function frame(now){
     if(now-lastUI>120){
       timeUI();updateTargetDistance();updateLabels();
       $('flight-speed').textContent=flight.mode==='land'?'5 m/s · walking':speedLabel(flight.speed);$('speed-slider').value=flight.speedExponent;
-      if(flight.mode==='land')$('surface-name').textContent=universe.landing.error?'Surface could not load':universe.landing.ready?universe.landing.profile.title:'Loading surface materials…';
+      const terrain=universe.landing;
+      $('surface-panel').hidden=!terrain.visible;document.body.classList.toggle('is-land',terrain.visible);
+      if(terrain.visible){$('surface-name').textContent=`${terrain.body.name} · ${terrain.profile.title}`;
+        $('surface-coordinates').textContent=`${terrain.coordinates.latitude.toFixed(3)}° latitude · ${terrain.coordinates.longitude.toFixed(3)}° longitude`;}
+      $('telescope-zoom').textContent=`Telescope ${flight.camera.zoom.toFixed(flight.camera.zoom<10?2:0)}×`;
+      $('telescope-zoom').classList.toggle('active',flight.camera.zoom!==1);
       const center=universe.nodes.get(flight.target).group.position;
       const altitude=Math.max(0,(center.length()-universe.radius(flight.target))*KM_PER_UNIT);
-      $('altitude').textContent=`${flight.warp?'WARPING · ':''}ALT ${altitude>AU?`${format(altitude/AU,2)} AU`:`${format(altitude)} km`}`;
+      const near=universe.landing.near;
+      $('altitude').textContent=near&&near.altitude<50000?`ALT ${format(Math.max(0,near.altitude),1)} m · ${near.body.name}`:`${flight.warp?'WARPING · ':''}ALT ${altitude>AU?`${format(altitude/AU,2)} AU`:`${format(altitude)} km`}`;
       if(fpsTime>.75){measuredFPS=Math.round(fpsFrames/fpsTime);$('fps').textContent=`${measuredFPS} FPS`;fpsFrames=0;fpsTime=0;}
       lastUI=now;
     }
@@ -242,8 +239,20 @@ async function main(){
   window.__cosmos={
     ready:true,
     diagnostics:()=>({...universe.getDiagnostics(),selected,mode:flight.mode,jd:clock.jd,rate:clock.rate,paused:clock.paused,
-      position:flight.position.toArray(),speed:flight.speed,settings:{...settings},warp:!!flight.warp,fps:measuredFPS}),
+      position:flight.position.toArray(),zoom:flight.camera.zoom,effectiveFOV:flight.camera.getEffectiveFOV(),speed:flight.speed,settings:{...settings},warp:!!flight.warp,fps:measuredFPS}),
   };
+  if((await window.cosmos.version()).testing){
+    window.__cosmos.place=async(id,latitude,longitude,altitude=1000,lookDown=false)=>{
+      const {surfaceDirection}=await import('./data/geography.js');
+      const {Vector3,Quaternion,Euler}=await import('three');
+      select(id);flight.target=id;flight.free();
+      const landing=universe.landing,body=BY_ID[id],local=new Vector3(...surfaceDirection(latitude,longitude)),q=landing.bodyRotation(id);
+      const sample=landing.sample(body,local),factor=universe.radius(id)/(body.radius*1000);
+      flight.position.fromArray(universe.renderPositions[id]).addScaledVector(local.clone().applyQuaternion(q),universe.radius(id)+(sample.height+altitude)*factor);
+      flight.camera.quaternion.copy(q).multiply(new Quaternion().setFromUnitVectors(new Vector3(0,1,0),local)).multiply(new Quaternion().setFromEuler(new Euler(lookDown?-Math.PI/2:-.12,0,0)));
+      flight.velocity.set(0,0,0);flight.surfaceFrame=null;flight.followSurface();
+    };
+  }
   requestAnimationFrame(frame);
 }
 main().catch(error=>{

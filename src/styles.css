@@ -24,3 +24,5 @@
 .biome-buttons{margin-top:13px}.biome-buttons button{flex:1;border:1px solid #acc8e222;border-radius:5px;font-size:10px;padding:9px 5px;color:#8ea9be}.biome-buttons button.active{background:#95c8f222;color:#d3eaff;border-color:#a1d5f855}
 body.is-land .view-tools{bottom:365px}body.is-land .scene-caption p{opacity:.75}body.is-land .scene-caption{top:145px}
 @media(max-width:1250px){.surface-panel{left:auto;right:20px;transform:none;width:430px}body.is-land .view-tools{bottom:365px;left:auto;right:40px;transform:none}}
+
+body.is-land .pill{backdrop-filter:none}body.is-land .view-tools{bottom:350px}

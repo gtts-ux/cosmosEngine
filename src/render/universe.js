@@ -41,7 +41,7 @@ export class Universe {
     this.sunLight.castShadow=true;this.sunLight.shadow.mapSize.set(512,512);
     this.scene.add(this.sunLight);
     const geo=new THREE.SphereGeometry(1,96,64);
-    this.lowSphere=geo;this.surfaceSphere=new THREE.SphereGeometry(1,512,256);
+    this.lowSphere=geo;this.surfaceSphere=new THREE.SphereGeometry(1,1024,512);
     const black=solidTexture(0,0,0),normal=solidTexture(128,128,255);
     for(const b of bodies) {
       const group=new THREE.Group();this.scene.add(group);
@@ -51,6 +51,7 @@ export class Universe {
       const airColor=new THREE.Color(b.id==='mars'?'#d78858':b.id==='venus'||b.id==='titan'?'#eeb972':b.id==='saturn'?'#d4bd8d':b.id==='jupiter'?'#ccb596':b.id==='uranus'?'#8ccad2':'#429bff');
       const hasAir=['earth','mars','venus','jupiter','saturn','uranus','neptune','titan'].includes(b.id);
       const uniforms={
+        detailCenter:{value:new THREE.Vector3(0,1,0)},detailCut:{value:-1},
         dayMap:{value:textures.get(b.texture||b.id)},nightMap:{value:b.id==='earth'?textures.get('2k_earth_nightmap.jpg'):black},
         normalMap:{value:b.id==='earth'?textures.get('earth-normal.png'):normal},specMap:{value:b.id==='earth'?textures.get('earth-specular.png'):black},
         sunDirection:{value:new THREE.Vector3(1,0,0)},atmosphereColor:{value:airColor},
@@ -146,6 +147,7 @@ export class Universe {
         p=p.map((v,i)=>parentRender[i]+(v-parentTrue[i]/KM_PER_UNIT)*scale);
       }
       this.renderPositions[b.id]=p;
+      this.nodes.get(b.id).mesh.rotation.y=((jd-J2000)/(Math.abs(b.rotation)||1)*Math.PI*2)%(Math.PI*2);
     }
     if(this.lastOrbitJD===undefined||Math.abs(jd-this.lastOrbitJD)>30){
       for(const node of this.nodes.values())if(node.orbit){

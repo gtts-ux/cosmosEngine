@@ -24,7 +24,7 @@
       <button data-window="maximize" class="maximize" aria-label="Toggle full screen"></button>
     </div>
     <span class="title-name">CosmosEngine <span class="muted">— Solar System</span></span>
-    <span class="title-version">MAC / 1.1</span>
+    <span class="title-version">MAC / 1.2</span>
   </header>
   <div id="hud">
     <nav class="topbar flex items-center justify-between">
@@ -76,14 +76,15 @@
       <div id="target-note" class="target-note">Approximate ephemeris · J2000 frame</div>
     </aside>
     <div class="view-tools flex items-center gap-2">
+      <button id="telescope-zoom" class="pill" title="Hold Shift and scroll: 0.5×–1000×. Click to reset to 1×.">Telescope 1.00×</button>
       <button id="scale-toggle" class="pill active" title="Switch between realistic body sizes and enlarged bodies"><span class="tiny-icon">◉</span> <span id="scale-name">True scale</span></button>
       <button id="orbits-toggle" class="pill"><span class="tiny-icon">◌</span> Orbits</button>
       <button id="labels-toggle" class="pill active"><span class="tiny-icon">⌗</span> Labels</button>
     </div>
     <div id="surface-panel" class="panel surface-panel" hidden>
-      <div class="flex justify-between items-center gap-3"><div><span class="eyebrow">LANDING VIEW</span><strong id="surface-name">Preparing surface…</strong></div><button id="surface-exit" class="pill">↑ Return to orbit</button></div>
-      <div id="earth-biomes" class="biome-buttons flex gap-2"><button data-biome="grass" class="active">Grassland</button><button data-biome="sand">Beach / sand</button><button data-biome="water">Ocean / water</button></div>
-      <small>Reconstructed local terrain · WASD to move · drag to look</small>
+      <div class="flex justify-between items-center gap-3"><div><span class="eyebrow">LOCAL SURFACE</span><strong id="surface-name">Preparing surface…</strong></div><button id="surface-exit" class="pill">↑ Return to orbit</button></div>
+      <small id="surface-coordinates"></small>
+      <small>Globe-mapped materials · reconstructed relief · WASD to move</small>
     </div>
     <div class="flight-panel panel">
       <div class="flex justify-between items-center"><span class="eyebrow">NAVIGATION</span><span id="mode-badge">ORBIT LOCKED</span></div>
@@ -133,11 +134,12 @@
     <div class="help-row"><span>Mouse look / orbit</span><span>Drag the scene</span></div>
     <div class="help-row"><span>Pointer-locked look</span><span>Hold right mouse in flight</span></div>
     <div class="help-row"><span>Flight speed / orbit zoom</span><span>Scroll wheel</span></div>
+    <div class="help-row"><span>Telescope 0.5×–1000× / reset</span><span><kbd>Shift + scroll</kbd> / click telescope</span></div>
     <div class="help-row"><span>Boost</span><kbd>Shift</kbd></div>
     <div class="help-row"><span>Free flight / orbit / surface</span><span><kbd>F</kbd> <kbd>O</kbd> <kbd>L</kbd></span></div>
     <div class="help-row"><span>Warp / find / pause</span><span><kbd>G</kbd> <kbd>⌘ K</kbd> <kbd>Space</kbd></span></div>
     <div class="help-row"><span>Hide interface / reset time</span><span><kbd>H</kbd> <kbd>R</kbd></span></div>
-    <p class="modal-note">Click a world to inspect it. “Land” opens detailed local terrain with photographed materials. Use WASD to move and drag to look. Earth offers grassland, beach, and ocean environments. O returns to orbit. Gas giants offer cloud-top views.</p>
+    <p class="modal-note">Fly close to any world to reveal detailed terrain automatically. Materials follow the globe map at your latitude and longitude. Land descends beneath your current position; WASD moves and drag looks around. Shift + scroll adjusts the telescope from 0.5× to 1000×; click its indicator to reset. O returns to orbit. Gas giants offer cloud tops.</p>
     <p class="modal-note">Planet orbits use approximate JPL elements for 1800–2050. Moon and asteroid trajectories use simplified mean elements; satellite phases and surface orientations are illustrative. This is an exploration simulator, not a precision ephemeris.</p>
   </dialog>
   <script type="module" src="app.js"></script>
