@@ -6,6 +6,10 @@ Development hardware: Intel Mac, macOS 14.8.2. Electron 44.9.2, Three.js 0.186.1
 
 The desktop smoke test covers WebGL 2/logarithmic depth, time controls, search, scale switching, free flight, automatic terrain at known Earth ocean/desert/vegetation/ice coordinates, neutral lunar colors, continuous descent using thrust, kilometre-scale terrain recentering, body-fixed tracking at accelerated simulation time, optional landing and walking, telescope bounds and reset without throttle changes, settings persistence, IPC restrictions, overview, solar shaders, HUD and help. It also renders automatic local detail on every one of the 37 landable catalog bodies.
 
+Both the source app and the packaged Intel 1.2.0 app passed all 17 desktop check groups with no renderer or shader errors. The final stationary Earth orbital view reported 60 FPS at medium quality; this is a local observation, not a performance guarantee. Both local app bundles passed `codesign --verify --deep --strict`, and both local DMGs passed `hdiutil verify`.
+
+[Public v1.2.0 release](https://github.com/gtts-ux/cosmosEngine/releases/tag/v1.2.0) contains both architectures and checksums. [The release workflow](https://github.com/gtts-ux/cosmosEngine/actions/runs/39631657032) completed successfully for both architectures and publication.
+
 Screenshots and JSON diagnostics are written to `test-output/`. Release builds use the same source and offline asset manifest. The GitHub workflow runs the numerical tests, builds both macOS architectures, verifies DMG integrity and publishes installers and SHA-256 checksums.
 
 Only Intel runtime behavior can be validated on this development machine. Apple Silicon installers are packaged separately; an Apple Silicon runtime test is still required. Builds have ad-hoc signatures and are not Apple Developer ID notarized.
