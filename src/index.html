@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>CosmosEngine-Mac</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <canvas id="universe" aria-label="Interactive three-dimensional solar system"></canvas>
+  <div id="vignette"></div>
+  <div id="loading">
+    <div class="loading-orbit"><i></i><b></b></div>
+    <div class="eyebrow">COSMOS ENGINE</div>
+    <h1>A universe to explore.</h1>
+    <p id="load-message">Preparing your observatory…</p>
+    <div class="load-track"><span id="load-progress"></span></div>
+  </div>
+  <header class="titlebar">
+    <div class="traffic-lights flex items-center gap-2">
+      <button data-window="close" class="close" aria-label="Close window"></button>
+      <button data-window="minimize" class="minimize" aria-label="Minimize window"></button>
+      <button data-window="maximize" class="maximize" aria-label="Toggle full screen"></button>
+    </div>
+    <span class="title-name">CosmosEngine <span class="muted">— Solar System</span></span>
+    <span class="title-version">MAC / 1.1</span>
+  </header>
+  <div id="hud">
+    <nav class="topbar flex items-center justify-between">
+      <div class="brand flex items-center gap-3">
+        <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><circle cx="20" cy="20" r="10" stroke="currentColor"/><ellipse cx="20" cy="20" rx="19" ry="6" transform="rotate(-35 20 20)" stroke="currentColor"/><circle cx="30" cy="10" r="2.3" fill="currentColor"/></svg>
+        <div><strong>COSMOS<span>ENGINE</span></strong><small>YOUR PERSONAL OBSERVATORY</small></div>
+      </div>
+      <div class="search-area">
+        <label class="search-box flex items-center gap-3">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg>
+          <input id="search" placeholder="Find a world, moon, or asteroid…" autocomplete="off" aria-label="Search celestial bodies" aria-controls="search-results">
+          <kbd>⌘ K</kbd>
+        </label>
+        <div id="search-results" class="panel" hidden></div>
+      </div>
+      <div class="flex items-center gap-2 toolbar-actions">
+        <span class="live"><i></i> LOCAL SIMULATION</span>
+        <button id="help-button" class="icon-button" title="Flight manual" aria-label="Flight manual">?</button>
+        <button id="settings-button" class="icon-button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg></button>
+      </div>
+    </nav>
+    <aside class="explorer panel">
+      <div class="panel-heading flex justify-between items-center"><span class="eyebrow">EXPLORER</span><span class="count">20 OBJECTS</span></div>
+      <button id="overview" class="system-button flex items-center gap-3"><span class="system-icon">◎</span><span><strong>Solar System</strong><small>Orion Arm · Milky Way</small></span><span class="arrow">↗</span></button>
+      <div class="explorer-tabs flex" role="tablist" aria-label="Object type">
+        <button class="active" role="tab" aria-selected="true" data-filter="planets">Planets</button>
+        <button role="tab" aria-selected="false" data-filter="moons">Moons</button>
+        <button role="tab" aria-selected="false" data-filter="small">Small bodies</button>
+      </div>
+      <div id="body-list"></div>
+      <div class="explorer-footer"><i></i> JPL orbital elements <span>↗</span></div>
+    </aside>
+    <div class="scene-caption"><span class="eyebrow" id="scene-context">SOL SYSTEM / THIRD PLANET</span><h1 id="scene-title">Earth</h1><p id="scene-subtitle">A familiar world. A different perspective.</p></div>
+    <div id="labels"></div>
+    <aside class="inspector panel">
+      <div class="panel-heading flex justify-between items-center"><span class="eyebrow">TARGET TELEMETRY</span><span class="target-dot"></span></div>
+      <div class="target-heading flex items-center gap-3"><div id="target-thumb" class="target-thumb"></div><div><h2 id="target-name">Earth</h2><span id="target-kind">Terrestrial planet</span></div></div>
+      <p id="target-description"></p>
+      <div class="metric hero-metric"><span>DISTANCE FROM SUN</span><strong id="target-distance">1.00 <small>AU</small></strong></div>
+      <div class="metrics-grid">
+        <div class="metric"><span>MEAN RADIUS</span><strong id="target-radius"></strong></div>
+        <div class="metric"><span>SURFACE GRAVITY</span><strong id="target-gravity"></strong></div>
+        <div class="metric"><span>MASS</span><strong id="target-mass"></strong></div>
+        <div class="metric"><span>ORBITAL PERIOD</span><strong id="target-period"></strong></div>
+      </div>
+      <div class="atmosphere-info"><span class="eyebrow">ATMOSPHERE</span><p id="target-atmosphere"></p></div>
+      <button id="warp" class="primary-button"><span>↗</span> Warp to target <kbd>G</kbd></button>
+      <div class="flex gap-2 target-actions"><button id="orbit">◎ Lock orbit</button><button id="land">↓ Land</button></div>
+      <div id="target-note" class="target-note">Approximate ephemeris · J2000 frame</div>
+    </aside>
+    <div class="view-tools flex items-center gap-2">
+      <button id="scale-toggle" class="pill active" title="Switch between realistic body sizes and enlarged bodies"><span class="tiny-icon">◉</span> <span id="scale-name">True scale</span></button>
+      <button id="orbits-toggle" class="pill"><span class="tiny-icon">◌</span> Orbits</button>
+      <button id="labels-toggle" class="pill active"><span class="tiny-icon">⌗</span> Labels</button>
+    </div>
+    <div id="surface-panel" class="panel surface-panel" hidden>
+      <div class="flex justify-between items-center gap-3"><div><span class="eyebrow">LANDING VIEW</span><strong id="surface-name">Preparing surface…</strong></div><button id="surface-exit" class="pill">↑ Return to orbit</button></div>
+      <div id="earth-biomes" class="biome-buttons flex gap-2"><button data-biome="grass" class="active">Grassland</button><button data-biome="sand">Beach / sand</button><button data-biome="water">Ocean / water</button></div>
+      <small>Reconstructed local terrain · WASD to move · drag to look</small>
+    </div>
+    <div class="flight-panel panel">
+      <div class="flex justify-between items-center"><span class="eyebrow">NAVIGATION</span><span id="mode-badge">ORBIT LOCKED</span></div>
+      <div class="flight-mode flex"><button id="orbit-mode" class="active">◎ Orbit / inspect</button><button id="free-mode">✧ Free flight</button></div>
+      <div class="flight-speed flex justify-between items-end"><span>Travel speed</span><strong id="flight-speed"></strong></div>
+      <input id="speed-slider" type="range" min="0" max="15.976" step=".01" value="6" aria-label="Flight speed logarithmic scale">
+      <div class="speed-limits flex justify-between"><span>1 m/s</span><span>1 ly/s</span></div>
+    </div>
+    <div class="time-panel panel">
+      <div class="time-date"><span class="eyebrow">SIMULATION TIME <span>UTC</span></span><strong id="utc-date"></strong><small id="julian-date"></small></div>
+      <div class="time-controls">
+        <div class="flex items-center justify-center gap-2">
+          <button id="reverse" title="Reverse time" aria-label="Reverse time">↶</button>
+          <button id="slower" title="Slow time" aria-label="Slow time">−</button>
+          <button id="pause" class="play-button" title="Pause or play (Space)" aria-label="Pause simulation">Ⅱ</button>
+          <button id="faster" title="Accelerate time" aria-label="Accelerate time">+</button>
+          <button id="realtime" title="Reset to current time" aria-label="Reset to current time">↺</button>
+        </div>
+        <div class="time-scale"><span id="time-rate">1× REAL TIME</span><span class="time-separator">/</span><span id="time-direction">FORWARD</span></div>
+      </div>
+      <div class="time-presets"><button data-rate="1">1×</button><button data-rate="1000">1k×</button><button data-rate="1000000">1M×</button></div>
+    </div>
+    <footer class="statusbar flex items-center justify-between">
+      <div class="flex items-center gap-4"><span><i class="status-dot"></i> <span id="renderer-status">WEBGL 2</span></span><span id="fps">60 FPS</span><span id="scale-status">REALISTIC SCALE</span></div>
+      <div id="control-hint"><kbd>DRAG</kbd> orbit <span>·</span> <kbd>SCROLL</kbd> zoom <span>·</span> <kbd>H</kbd> hide interface</div>
+      <div id="altitude">ALT 0 km</div>
+    </footer>
+  </div>
+  <button id="show-hud" hidden>Show interface <kbd>H</kbd></button>
+  <div id="toast" role="status" hidden></div>
+  <dialog id="settings-dialog" class="panel modal">
+    <div class="flex justify-between items-center"><div><span class="eyebrow">YOUR OBSERVATORY</span><h2>Settings</h2></div><button class="dialog-close icon-button" aria-label="Close settings">×</button></div>
+    <label class="setting-row"><span>Graphics quality<small>Resolution and GPU workload</small></span><select id="quality"><option value="low">Performance</option><option value="medium">Balanced</option><option value="high">High fidelity</option></select></label>
+    <label class="setting-row"><span>Bloom<small>Sun and city light glow</small></span><input id="bloom" type="range" min="0" max="1.5" step=".05"></label>
+    <label class="setting-row"><span>Exposure<small>Scene brightness</small></span><input id="exposure" type="range" min=".5" max="2" step=".05"></label>
+    <label class="setting-row"><span>Star density<small>Additional luminous stars</small></span><input id="stars" type="range" min="0" max="16000" step="500"></label>
+    <label class="setting-row"><span>Shadows<small>Planet, moon, and ring occlusion</small></span><input id="shadows" type="checkbox"></label>
+    <label class="setting-row"><span>Orbit paths</span><input id="orbit-lines" type="checkbox"></label>
+    <label class="setting-row"><span>Object labels</span><input id="setting-labels" type="checkbox"></label>
+    <p class="modal-note">Settings are saved automatically on this Mac.</p>
+    <div class="credits">Planet maps: Solar System Scope / INOVE · CC BY 4.0<br>Orbital elements: NASA / JPL Solar System Dynamics<br>Procedural satellite surfaces are illustrative.</div>
+  </dialog>
+  <dialog id="help-dialog" class="panel modal">
+    <div class="flex justify-between items-center"><div><span class="eyebrow">FLIGHT MANUAL</span><h2>Make space your own.</h2></div><button class="dialog-close icon-button" aria-label="Close help">×</button></div>
+    <div class="help-row"><span>Thrust / strafe</span><span><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></span></div>
+    <div class="help-row"><span>Roll / vertical thrust</span><span><kbd>Q</kbd> <kbd>E</kbd> / <kbd>↑</kbd> <kbd>↓</kbd></span></div>
+    <div class="help-row"><span>Mouse look / orbit</span><span>Drag the scene</span></div>
+    <div class="help-row"><span>Pointer-locked look</span><span>Hold right mouse in flight</span></div>
+    <div class="help-row"><span>Flight speed / orbit zoom</span><span>Scroll wheel</span></div>
+    <div class="help-row"><span>Boost</span><kbd>Shift</kbd></div>
+    <div class="help-row"><span>Free flight / orbit / surface</span><span><kbd>F</kbd> <kbd>O</kbd> <kbd>L</kbd></span></div>
+    <div class="help-row"><span>Warp / find / pause</span><span><kbd>G</kbd> <kbd>⌘ K</kbd> <kbd>Space</kbd></span></div>
+    <div class="help-row"><span>Hide interface / reset time</span><span><kbd>H</kbd> <kbd>R</kbd></span></div>
+    <p class="modal-note">Click a world to inspect it. “Land” opens detailed local terrain with photographed materials. Use WASD to move and drag to look. Earth offers grassland, beach, and ocean environments. O returns to orbit. Gas giants offer cloud-top views.</p>
+    <p class="modal-note">Planet orbits use approximate JPL elements for 1800–2050. Moon and asteroid trajectories use simplified mean elements; satellite phases and surface orientations are illustrative. This is an exploration simulator, not a precision ephemeris.</p>
+  </dialog>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

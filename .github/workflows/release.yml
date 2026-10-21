@@ -1,0 +1,71 @@
+name: Build and publish Mac installers
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**/*.md']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: mac-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }} DMG
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Download Electron runtime
+        run: node node_modules/electron/install.js
+      - name: Numerical and terrain tests
+        run: npm test
+      - name: Download verified licensed assets and build renderer
+        run: npm run build
+      - name: Package Mac installer
+        run: npx electron-builder --mac dmg --${{ matrix.arch }}
+      - name: Verify installer checksum
+        run: hdiutil verify release/*-${{ matrix.arch }}.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-${{ matrix.arch }}
+          path: release/*.dmg
+          retention-days: 7
+
+  publish:
+    name: Publish public downloads
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: installers
+          merge-multiple: true
+      - name: Publish versioned release and checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          cd installers
+          sha256sum *.dmg > SHA256SUMS.txt
+          cd ..
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "CosmosEngine-Mac $VERSION" --notes-file RELEASE_NOTES.md
+          fi
+          gh release upload "$TAG" installers/*.dmg installers/SHA256SUMS.txt --clobber

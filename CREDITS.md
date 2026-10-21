@@ -1,0 +1,69 @@
+# Credits and provenance
+
+## Planet textures
+
+Solar System Scope / INOVE, [Solar Textures](https://www.solarsystemscope.com/textures/).
+Distributed under [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/).
+
+Bundled images: Mercury, Venus atmosphere, Mars, Jupiter, Saturn, Uranus,
+Neptune, Sun, Moon, Earth day/night/cloud/normal/specular maps, and the stars
+plus Milky Way panorama. Earth normal and specular TIFFs were converted to PNG
+with macOS `sips`; color maps are otherwise unmodified. The provider describes
+the maps as based on NASA imagery and elevation data, with enhanced colors and
+some reconstructed regions. Satellite and asteroid procedural maps in this app
+are illustrative and are not spacecraft image maps.
+
+## Orbital model
+
+NASA / JPL Solar System Dynamics:
+[Approximate Positions of the Planets](https://ssd.jpl.nasa.gov/planets/approx_pos.html).
+Table 1 values and rates, J2000 mean ecliptic/equinox, 1800–2050 interval.
+The Earth tabulation describes the Earth-Moon barycenter.
+
+Physical catalog fields are rounded standard reference values. Satellite and
+asteroid elements are simplified illustrative mean orbits, not a live Horizons
+download or a high-precision planetary satellite ephemeris.
+
+## Simplex noise
+
+The Sun's 3D simplex implementation is adapted from
+[webgl-noise](https://github.com/ashima/webgl-noise), Ashima Arts and
+Stefan Gustavson, MIT license:
+
+Copyright (C) 2011 Ashima Arts. All rights reserved.
+Copyright (C) 2011–2016 Stefan Gustavson. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## Software and icon
+
+- Three.js — MIT, Copyright © 2010–2026 Three.js authors.
+- Electron — MIT, Electron contributors.
+- Tailwind CSS — MIT, Tailwind Labs contributors.
+- electron-builder, esbuild, and Playwright retain their respective licenses.
+- CosmosEngine's vector icon and application code were created for this project.
+
+## Version 1.1 landing materials
+
+Photographed albedo, OpenGL normal, and roughness maps from [Poly Haven](https://polyhaven.com), under [CC0](https://creativecommons.org/publicdomain/zero/1.0/): [Aerial Grass Rock](https://polyhaven.com/a/aerial_grass_rock), [Coast Sand 02](https://polyhaven.com/a/coast_sand_02), [Rocky Terrain 02](https://polyhaven.com/a/rocky_terrain_02), and [Snow 02](https://polyhaven.com/a/snow_02). These are terrestrial material samples used in representative reconstructions, not photographs taken on alien surfaces.
+
+Spacecraft-derived global mosaics and shaded relief from [USGS Astrogeology’s planetary WMS](https://astrowebmaps.wr.usgs.gov/webmapatlas/Layers/maps.html): Io, Europa, Ganymede, Callisto (Galileo/Voyager); Mimas, Enceladus, Tethys, Dione, Rhea, Titan, Iapetus (Cassini/Voyager); Triton (Voyager 2); Charon (New Horizons); Phobos/Deimos (Viking); Ceres/Vesta (Dawn). Credits include NASA, JPL-Caltech, USGS, DLR, UCLA, MPS, IDA, JHUAPL, and SwRI as applicable. Source imagery can have incomplete coverage, contrast normalization, and shaded-relief processing.
+
+Pluto global color map: [NASA PIA11707](https://science.nasa.gov/image-detail/amf-pia11707/), New Horizons Ralph/MVIC, NASA/JHUAPL/SwRI. Unobserved or poorly observed areas are not high-resolution surveys.
+
+Exact downloaded URLs, credit labels, and SHA-256 hashes are recorded in `assets/manifest.json`. USGS source layers, source URLs, and ground material selections are maintained in `scripts/record-assets.mjs`.

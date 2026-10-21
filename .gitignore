@@ -1,0 +1,11 @@
+node_modules/
+dist/
+release/
+test-output/
+.cache/
+.test-profile/
+*.log
+.DS_Store
+assets/textures/
+build/icon.iconset/
+build/icon.png

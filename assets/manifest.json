@@ -1,0 +1,319 @@
+[
+  {
+    "file": "2k_sun.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_sun.jpg",
+    "sha256": "ff0f076ba65e03b5ab518451bc96699325be38e3ccbdd5869ee1c00f3a0c8816",
+    "outputSha256": "ff0f076ba65e03b5ab518451bc96699325be38e3ccbdd5869ee1c00f3a0c8816",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "2k_mercury.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_mercury.jpg",
+    "sha256": "5a5c80607f643496bac9a631e71957def35ed788895f18b678ac849c2b38e48a",
+    "outputSha256": "5a5c80607f643496bac9a631e71957def35ed788895f18b678ac849c2b38e48a",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "2k_venus_atmosphere.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_venus_atmosphere.jpg",
+    "sha256": "225012ad4911730605c4e189ca2a3bf674fce50cc48aab4102b936b47d6991ac",
+    "outputSha256": "225012ad4911730605c4e189ca2a3bf674fce50cc48aab4102b936b47d6991ac",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "8k_earth_daymap.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/8k_earth_daymap.jpg",
+    "sha256": "88ab060b6e7d241cfc590c69f528fab2b3247b738d40124cb590999a6fe44abc",
+    "outputSha256": "88ab060b6e7d241cfc590c69f528fab2b3247b738d40124cb590999a6fe44abc",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "2k_mars.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_mars.jpg",
+    "sha256": "2d187f3e77a98eaa8cea5f4cc722f633c122ef170b9e94ace6b5fb6cbc3f8e01",
+    "outputSha256": "2d187f3e77a98eaa8cea5f4cc722f633c122ef170b9e94ace6b5fb6cbc3f8e01",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "2k_jupiter.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_jupiter.jpg",
+    "sha256": "b0f04d005350252636b0e3396fc592548cbd9e9126b269d32d5c6abd4b0e4f2b",
+    "outputSha256": "b0f04d005350252636b0e3396fc592548cbd9e9126b269d32d5c6abd4b0e4f2b",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "2k_saturn.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_saturn.jpg",
+    "sha256": "54a900ca9bf7ab62e70f862852759abdf342e6d6436a95a2fe9ebdb6bcd3bbac",
+    "outputSha256": "54a900ca9bf7ab62e70f862852759abdf342e6d6436a95a2fe9ebdb6bcd3bbac",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "2k_uranus.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_uranus.jpg",
+    "sha256": "d15239d46f82d3ea13d2b260b5b29b2a382f42f2916dae0694d0387b1204a09d",
+    "outputSha256": "d15239d46f82d3ea13d2b260b5b29b2a382f42f2916dae0694d0387b1204a09d",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "2k_neptune.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_neptune.jpg",
+    "sha256": "cb42ea82709741d28b0af44d8b283cbc6dbd0c521a7f0e1e1e010ade00977df6",
+    "outputSha256": "cb42ea82709741d28b0af44d8b283cbc6dbd0c521a7f0e1e1e010ade00977df6",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "2k_moon.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_moon.jpg",
+    "sha256": "2764ba6535ea0481a062846ee033cc7a909dae05b31a8fd13f3e98f3a7fd92bd",
+    "outputSha256": "2764ba6535ea0481a062846ee033cc7a909dae05b31a8fd13f3e98f3a7fd92bd",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "io-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/jupiter/io_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=SSI_VGR_color&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "0de157956901d392a936777384e3b9e12cfdb5575ecdf010f4a0bd43e903e00f",
+    "outputSha256": "0de157956901d392a936777384e3b9e12cfdb5575ecdf010f4a0bd43e903e00f",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "europa-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/jupiter/europa_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=GALILEO_VOYAGER&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "d884c758bb2d219deab15fba4c227a4630ce1b21032212b34fb2f65eed0493a1",
+    "outputSha256": "d884c758bb2d219deab15fba4c227a4630ce1b21032212b34fb2f65eed0493a1",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "ganymede-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/jupiter/ganymede_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=GALILEO_VOYAGER&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "f42f24c1ce0b4f06e762083a1191b31b284b72cd8751f2d8ab8bf46e2aea1884",
+    "outputSha256": "f42f24c1ce0b4f06e762083a1191b31b284b72cd8751f2d8ab8bf46e2aea1884",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "callisto-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/jupiter/callisto_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=GALILEO_VOYAGER&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "733dce595eb97c83cae68862eb40409bf1dc3ffc9a797f0ec9ac2593de4cd794",
+    "outputSha256": "733dce595eb97c83cae68862eb40409bf1dc3ffc9a797f0ec9ac2593de4cd794",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "titan-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/saturn/titan_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=CASSINI&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "38370ad8f39acae0f060bb2bef84ae1efe40144fb3fa098b502bbe376b8d2cd0",
+    "outputSha256": "38370ad8f39acae0f060bb2bef84ae1efe40144fb3fa098b502bbe376b8d2cd0",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "triton-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/neptune/triton_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=TRITON_VOYAGER2&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "7dcd7950a4bf58869962f83dbb1c1e495ef9e04f44d6701165ad62d2be39866e",
+    "outputSha256": "7dcd7950a4bf58869962f83dbb1c1e495ef9e04f44d6701165ad62d2be39866e",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "ceres-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/asteroid_belt/ceres_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=Ceres_FC_global&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "54460b351d396304e8d147fa264d9a1959a993156f7072d14b5be234b77d6e21",
+    "outputSha256": "54460b351d396304e8d147fa264d9a1959a993156f7072d14b5be234b77d6e21",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "vesta-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/asteroid_belt/vesta_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=Dawn_HAMO_global&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "4e92b1cda4602a41b98bab6368c5d0c84a14d84e1480f76fe812d4f4a4e25e1d",
+    "outputSha256": "4e92b1cda4602a41b98bab6368c5d0c84a14d84e1480f76fe812d4f4a4e25e1d",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "phobos-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/mars/phobos_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=VIKING&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "181aeff41335f3028a7c4a0c2d829f9850b8293354f229b3ece107b3b2c885a2",
+    "outputSha256": "181aeff41335f3028a7c4a0c2d829f9850b8293354f229b3ece107b3b2c885a2",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "deimos-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/mars/deimos_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=VIKING&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "029fb9f0119b629f6b1ea717ea3ccb66067e7687b1f4608741aab0c4b37db6f2",
+    "outputSha256": "029fb9f0119b629f6b1ea717ea3ccb66067e7687b1f4608741aab0c4b37db6f2",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "mimas-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/saturn/mimas_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=CASSINI_MIMAS_MOSAIC&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "6f99c3520c0793ab97c0d714d8db409b19364cb6e62eae8f7885c3635bfbe80d",
+    "outputSha256": "6f99c3520c0793ab97c0d714d8db409b19364cb6e62eae8f7885c3635bfbe80d",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "enceladus-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/saturn/enceladus_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=CASSINI&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "5a4f2837826eb24e428ab6de09612d37eb6d7674be6f275782b6a0b5ff53522c",
+    "outputSha256": "5a4f2837826eb24e428ab6de09612d37eb6d7674be6f275782b6a0b5ff53522c",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "tethys-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/saturn/tethys_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=CASSINI&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "c2099ac130d37243940419f8d4b31acfbfcc588290729b33659e75b49267f552",
+    "outputSha256": "c2099ac130d37243940419f8d4b31acfbfcc588290729b33659e75b49267f552",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "dione-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/saturn/dione_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=CASSINI_VOYAGER&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "75eff2e7b3ffc34a9b859383e70a9b120752e1600d7c8ee13166527857fc08a5",
+    "outputSha256": "75eff2e7b3ffc34a9b859383e70a9b120752e1600d7c8ee13166527857fc08a5",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "rhea-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/saturn/rhea_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=CASSINI_VOYAGER&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "4fd55e430c2a154c45b8212a6c2bf7017a22949c50a22293cff5292ed136f536",
+    "outputSha256": "4fd55e430c2a154c45b8212a6c2bf7017a22949c50a22293cff5292ed136f536",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "iapetus-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/saturn/iapetus_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=CASSINI_VOYAGER&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "0cbdfe2d43c21944ccc47d11e5e9e566a8b5845815ece0061010cd6983aa0534",
+    "outputSha256": "0cbdfe2d43c21944ccc47d11e5e9e566a8b5845815ece0061010cd6983aa0534",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "pluto-nasa.jpg",
+    "url": "https://images-assets.nasa.gov/image/PIA11707/PIA11707~orig.jpg",
+    "sha256": "e5a2717a8c8baaa580ab64b87ed5f30a9a1d91456538eb130b8ee6af6163a8e5",
+    "outputSha256": "e5a2717a8c8baaa580ab64b87ed5f30a9a1d91456538eb130b8ee6af6163a8e5",
+    "credit": "NASA/JHUAPL/SwRI / New Horizons, PIA11707"
+  },
+  {
+    "file": "charon-usgs.jpg",
+    "url": "https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/pluto/charon_simp_cyl.map&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=NEWHORIZONS_CHARON_MOSAIC&STYLES=&SRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024&FORMAT=image/jpeg",
+    "sha256": "548bf1e0aef594e4e93d7b4204e541374fb303480c65ccac6dc01d649e4a33bb",
+    "outputSha256": "548bf1e0aef594e4e93d7b4204e541374fb303480c65ccac6dc01d649e4a33bb",
+    "credit": "NASA mission imagery / USGS Astrogeology global mosaic"
+  },
+  {
+    "file": "2k_earth_nightmap.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_earth_nightmap.jpg",
+    "sha256": "c16fd1bc096ab91a5c5265c6ff9847c43f489f2e2ee790ccdbcbd03251cf3a5a",
+    "outputSha256": "c16fd1bc096ab91a5c5265c6ff9847c43f489f2e2ee790ccdbcbd03251cf3a5a",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "2k_earth_clouds.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_earth_clouds.jpg",
+    "sha256": "fffd7f68d41b37274822150e54a6ef605af1d3ec35624d9f628c3b896bfa42ed",
+    "outputSha256": "fffd7f68d41b37274822150e54a6ef605af1d3ec35624d9f628c3b896bfa42ed",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "earth-normal.png",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_earth_normal_map.tif",
+    "sha256": "f518ce2646ca935dbc17e316041de4fea7a5da0ec441e4eb22e711eabd843ba2",
+    "outputSha256": "c1183ae776acfd6951dfde9bbfda5a9d5a61951521d7564990aeb224ff0a5678",
+    "convertToPng": true,
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "earth-specular.png",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_earth_specular_map.tif",
+    "sha256": "6b90ecfce248591a1ecc9a3e49acca1a7059b6828877e718302ed9a6b4471bd7",
+    "outputSha256": "e2c6c373a65d62aaa2c9c1521d97e7f60a00d35960955342fb67a8dd1f32c89f",
+    "convertToPng": true,
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "2k_stars_milky_way.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/2k_stars_milky_way.jpg",
+    "sha256": "ec2240e6f3784d962ab81609b228bfd470e87c86d1fed5e99134d4cd3de24239",
+    "outputSha256": "ec2240e6f3784d962ab81609b228bfd470e87c86d1fed5e99134d4cd3de24239",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0"
+  },
+  {
+    "file": "ground-grass-color.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_grass_rock/aerial_grass_rock_diff_1k.jpg",
+    "sha256": "57b8041bfe0d0f01430e4dbaad45e7ddddf0a9fc97317f90dbc51f7b0d9e1b5d",
+    "outputSha256": "57b8041bfe0d0f01430e4dbaad45e7ddddf0a9fc97317f90dbc51f7b0d9e1b5d",
+    "credit": "Poly Haven / CC0"
+  },
+  {
+    "file": "ground-grass-normal.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_grass_rock/aerial_grass_rock_nor_gl_1k.jpg",
+    "sha256": "1aa3e23bff453f152e089b9f83aa36b4901651e019f7e2ca01d5331a9bbbda78",
+    "outputSha256": "1aa3e23bff453f152e089b9f83aa36b4901651e019f7e2ca01d5331a9bbbda78",
+    "credit": "Poly Haven / CC0"
+  },
+  {
+    "file": "ground-grass-rough.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_grass_rock/aerial_grass_rock_rough_1k.jpg",
+    "sha256": "b9f3f76aba74007f708333c0dbe73c52eb83ea0c4187a13e2e994f888a25114a",
+    "outputSha256": "b9f3f76aba74007f708333c0dbe73c52eb83ea0c4187a13e2e994f888a25114a",
+    "credit": "Poly Haven / CC0"
+  },
+  {
+    "file": "ground-sand-color.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_02/coast_sand_02_diff_1k.jpg",
+    "sha256": "6854bc49936d7b2971b579095c21342ad2c8fd1495aa3382b840335202964f53",
+    "outputSha256": "6854bc49936d7b2971b579095c21342ad2c8fd1495aa3382b840335202964f53",
+    "credit": "Poly Haven / CC0"
+  },
+  {
+    "file": "ground-sand-normal.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_02/coast_sand_02_nor_gl_1k.jpg",
+    "sha256": "285a9b5c7f39215a1446c51a69d81228a01277ebafc48b9aeebd115066b4f796",
+    "outputSha256": "285a9b5c7f39215a1446c51a69d81228a01277ebafc48b9aeebd115066b4f796",
+    "credit": "Poly Haven / CC0"
+  },
+  {
+    "file": "ground-sand-rough.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_02/coast_sand_02_rough_1k.jpg",
+    "sha256": "f2b99b9f81c7bd467107f61551ab6517cfa090efcdb10cc19bc2fc4ea347fd7f",
+    "outputSha256": "f2b99b9f81c7bd467107f61551ab6517cfa090efcdb10cc19bc2fc4ea347fd7f",
+    "credit": "Poly Haven / CC0"
+  },
+  {
+    "file": "ground-rock-color.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rocky_terrain_02/rocky_terrain_02_diff_1k.jpg",
+    "sha256": "d570c10b1d5302f4fde9e0e94f4cbab0d5e112fc3fe2b3b91c38a98bd3ddaf4b",
+    "outputSha256": "d570c10b1d5302f4fde9e0e94f4cbab0d5e112fc3fe2b3b91c38a98bd3ddaf4b",
+    "credit": "Poly Haven / CC0"
+  },
+  {
+    "file": "ground-rock-normal.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rocky_terrain_02/rocky_terrain_02_nor_gl_1k.jpg",
+    "sha256": "f4f9d9671c660f4e509e96d5da3091887dfd557e1353e313fa2d1dc789499ffd",
+    "outputSha256": "f4f9d9671c660f4e509e96d5da3091887dfd557e1353e313fa2d1dc789499ffd",
+    "credit": "Poly Haven / CC0"
+  },
+  {
+    "file": "ground-rock-rough.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rocky_terrain_02/rocky_terrain_02_rough_1k.jpg",
+    "sha256": "8652ee05de206888eb77f84df7c8080f6ffef27afadb7917127726570b66c45d",
+    "outputSha256": "8652ee05de206888eb77f84df7c8080f6ffef27afadb7917127726570b66c45d",
+    "credit": "Poly Haven / CC0"
+  },
+  {
+    "file": "ground-ice-color.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/snow_02/snow_02_diff_1k.jpg",
+    "sha256": "523a4e69c90b96d787dd69b897f29a2b3761a017024405c60aa630d1e8e9009a",
+    "outputSha256": "523a4e69c90b96d787dd69b897f29a2b3761a017024405c60aa630d1e8e9009a",
+    "credit": "Poly Haven / CC0"
+  },
+  {
+    "file": "ground-ice-normal.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/snow_02/snow_02_nor_gl_1k.jpg",
+    "sha256": "9495ec680616b8340e2cbecbd151bff84c690cfad4209e90cc98d2d0ba81f810",
+    "outputSha256": "9495ec680616b8340e2cbecbd151bff84c690cfad4209e90cc98d2d0ba81f810",
+    "credit": "Poly Haven / CC0"
+  },
+  {
+    "file": "ground-ice-rough.jpg",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/snow_02/snow_02_rough_1k.jpg",
+    "sha256": "b6dea8039ac2a5beaed6fd41834fb55540cc76b492edd1d48ba2da2f30f1cb75",
+    "outputSha256": "b6dea8039ac2a5beaed6fd41834fb55540cc76b492edd1d48ba2da2f30f1cb75",
+    "credit": "Poly Haven / CC0"
+  }
+]
