@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { terrainExtent,GROUND_TEXTURES } from '../data/surfaces.js';
 
 import { SurfaceAtlas } from './geography.js';
+import {isStar} from '../data/systems.js';
 import { shapeFactor,canLand } from '../data/shapes.js';
 import {terrainVertex,terrainFragment} from './terrain-shaders.js';
 import { surfaceVisible } from '../data/geography.js';
@@ -64,7 +65,7 @@ export class LandingTerrain {
   nearest(position){
     let best=null;
     for(const body of this.universe.bodies){
-      if(body.id==='sun')continue;
+      if(isStar(body))continue;
       const radius=this.universe.radius(body.id),factor=radius/(body.radius*1000);
       const local=this.localDirection(body.id,position);
       const altitude=(position.distanceTo(new THREE.Vector3(...this.universe.renderPositions[body.id]))-radius*shapeFactor(body,local.toArray()))/factor;

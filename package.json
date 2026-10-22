@@ -1,7 +1,7 @@
 {
   "name": "cosmosengine-mac",
   "productName": "CosmosEngine-Mac",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "An offline solar system observatory and free-flight simulator",
   "author": "CosmosEngine",
   "license": "MIT",
@@ -16,7 +16,8 @@
     "pack": "npm run build && electron-builder --mac --dir --x64",
     "dist": "npm run build && electron-builder --mac dmg --x64 && electron-builder --mac dmg --arm64",
     "dist:intel": "npm run build && electron-builder --mac dmg --x64",
-    "dist:arm": "npm run build && electron-builder --mac dmg --arm64"
+    "dist:arm": "npm run build && electron-builder --mac dmg --arm64",
+    "test:systems": "node scripts/systems-smoke.mjs"
   },
   "dependencies": {
     "three": "0.186.1"
@@ -43,7 +44,8 @@
       "package.json",
       "CREDITS.md",
       "LICENSE",
-      "README.md"
+      "README.md",
+      "DATA-LICENSE.md"
     ],
     "asar": true,
     "mac": {

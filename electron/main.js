@@ -3,6 +3,8 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { BODIES, TEXTURES } from '../src/data/catalog.js';
+import {randomBytes} from 'node:crypto';
+import {isStar,generatePlanet,sanitizeWorlds,restorePlanets,GENERATION_TYPES,MAX_GENERATED,MAX_PER_SYSTEM} from '../src/data/systems.js';
 import { defaults, sanitizeSettings } from './settings.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -45,6 +47,26 @@ async function setupIPC() {
     return saveQueue;
   });
   handle('celestial:catalog', () => BODIES);
+  const worldsFile=path.join(app.getPath('userData'),'worlds.json');let worldQueue=Promise.resolve();
+  const loadWorlds=async()=>{try{return sanitizeWorlds(JSON.parse(await readFile(worldsFile,'utf8')),BODIES);}catch(error){if(error.code==='ENOENT'||error instanceof SyntaxError)return {version:1,planets:[]};throw error;}};
+  handle('worlds:load',async()=>{await worldQueue.catch(()=>{});const state=await loadWorlds();return {state,bodies:restorePlanets(state,BODIES)};});
+  handle('worlds:generate',input=>{
+    if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('Invalid generation request');
+    const host=BODIES.find(b=>b.id===input.hostId&&isStar(b));
+    const count=input.count??1,type=input.type??'random';
+    if(!host||!Number.isInteger(count)||count<1||count>6||!GENERATION_TYPES.includes(type))throw new Error('Invalid generation options');
+    const name=typeof input.name==='string'?input.name.replace(/[\u0000-\u001f\u007f]/g,'').trim().slice(0,48):'';
+    const seed=typeof input.seed==='string'&&/^[a-zA-Z0-9-]{1,48}$/.test(input.seed)?input.seed:randomBytes(8).toString('hex');
+    const task=worldQueue.catch(()=>{}).then(async()=>{
+      const state=await loadWorlds(),existing=state.planets.filter(p=>p.hostId===host.id);
+      const next=existing.length?Math.max(...existing.map(d=>d.index))+1:0;
+      if(next+count>MAX_PER_SYSTEM||state.planets.length+count>MAX_GENERATED)throw new Error('Planet limit reached for this system or universe');
+      const added=Array.from({length:count},(_,i)=>({hostId:host.id,index:next+i,seed,type,name:count===1?name:''}));
+      state.planets.push(...added);
+      await mkdir(path.dirname(worldsFile),{recursive:true});await writeFile(worldsFile+'.tmp',JSON.stringify(state,null,2),{mode:0o600});await rename(worldsFile+'.tmp',worldsFile);
+      return {state,bodies:added.map(d=>generatePlanet(host,d))};
+    });worldQueue=task.then(()=>{},()=>{});return task;
+  });
   handle('texture:resolve', (name) => {
     if (typeof name !== 'string' || !TEXTURES.includes(name)) throw new Error('Unknown texture');
     return `cosmos://app/assets/textures/${name}`;

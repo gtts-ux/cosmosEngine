@@ -1,12 +1,28 @@
 # CosmosEngine-Mac
 
-An offline Mac solar-system explorer with free flight and detailed landing environments.
+An offline Mac explorer with the Solar System, nearby stars, procedural planets, free flight and detailed landing environments.
 
-**Download:** [Intel Mac installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.3.0-x64.dmg) · [Apple Silicon installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.3.0-arm64.dmg) · [All releases](https://github.com/gtts-ux/cosmosEngine/releases)
+**Download:** [Intel Mac installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.4.0-x64.dmg) · [Apple Silicon installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.4.0-arm64.dmg) · [All releases](https://github.com/gtts-ux/cosmosEngine/releases)
 
 Open the DMG and drag CosmosEngine-Mac into Applications. Requires macOS 12+ and WebGL 2. The installed app needs no Node.js, browser, server, or internet connection.
 
 Builds use local ad-hoc signatures and are not Apple Developer ID notarized. If macOS blocks opening the downloaded app, use System Settings → Privacy & Security to allow it. Do not disable Gatekeeper globally.
+
+## Nearby stars and generated systems
+
+The catalog includes **55 nearby stars in addition to the Sun**, including Proxima Centauri, Alpha Centauri A, Barnard’s Star, Sirius, Tau Ceti and Epsilon Eridani. Their approximate J2000 positions and distances come from the HYG v4.1 catalog. The neighborhood view shows actual catalog positions rather than placing these stars randomly in the background.
+
+- Choose the **Stars** tab, use search, or select a system from **Browse system**. Inspecting a star changes the sidebar to its system without moving the camera.
+- Click **Go to** or press G to travel. The current-system label follows your physical location; free flight between systems switches the catalog on arrival.
+- Click **＋ Planet** to create a world around the system you are browsing. Choose a name, random/rocky/ocean/ice/gas type and an optional seed. Click Go to after creating it.
+- On an empty extrasolar system, **Seed system** creates four fictional planets. Existing planetary systems are preserved; you can add individual worlds.
+- Generated worlds use deterministic textures, approximate physical properties and Keplerian orbits around their own host star. Solid worlds have automatic local terrain and landing; generated gas giants reject landing.
+- Generated recipes are saved atomically under the app’s user-data directory in `worlds.json` and restored on restart. Up to 16 generated planets per host and 256 total are supported.
+- **⤢ Stars** opens a neighborhood overview. The large system heading opens that system’s planetary overview.
+
+The star catalog contains primary entries only; binary companions, proper motion and stellar orbital motion are not simulated. Stellar mass/radius/luminosity are spectral estimates. Extrasolar planet discoveries are not bundled: planets created here are labelled **Generated**, are fictional, and are separate from the measured star positions. The catalog snapshot is not a complete or current census of nearby stars. The derived stellar table is licensed under CC BY-SA 4.0; see [DATA-LICENSE.md](DATA-LICENSE.md).
+
+System-local CPU coordinates and a camera-relative GPU origin keep ground movement precise after interstellar travel. Planet illumination follows the host star, and only the nearby system’s planetary geometry/orbits are shown.
 
 ## Landing environments
 
@@ -23,7 +39,7 @@ Regional colors and Earth material selection follow available global imagery, wh
 
 ## Catalog
 
-50 objects: the Sun, eight planets, five recognized dwarf planets, three other major asteroids, and 33 moons.
+105 fixed catalog objects: the Sun, 55 additional stars, eight Solar System planets, five recognized dwarf planets, three other major asteroids, and 33 moons. Saved generated worlds appear in their own host systems.
 
 - Earth: Moon.
 - Mars: Phobos, Deimos.
@@ -75,19 +91,20 @@ The first build downloads the licensed assets listed in `assets/manifest.json`, 
 ```sh
 npm test                 # Orbital, clock, settings, and terrain tests
 npm run test:app         # Real Electron rendering and interaction checks
+npm run test:systems     # Generation, interstellar travel and persistence checks
 npm run pack             # Intel .app
 npm run dist             # Intel and Apple Silicon DMGs, sequentially
 npm run dist:intel
 npm run dist:arm
 ```
 
-The smoke test uses a separate `.test-profile`, blocks HTTP/HTTPS requests, and writes screenshots and a JSON report to `test-output`. Set `COSMOS_PACKAGED_PATH` to a packaged executable to run the same test against the `.app`. Only the Intel build has been executed on the development hardware.
+The desktop tests use separate `.test-profile` and `.systems-test-profile` directories, blocks HTTP/HTTPS requests, and writes screenshots and a JSON report to `test-output`. Set `COSMOS_PACKAGED_PATH` to a packaged executable to run the same test against the `.app`. Only the Intel build has been executed on the development hardware.
 
 The GitHub Actions workflow builds both architectures, verifies the DMGs, and publishes them with SHA-256 checksums under a versioned GitHub Release.
 
 ## Rendering and science
 
-Electron 44.9.2, Three.js/WebGL 2, modular JavaScript, locally compiled Tailwind CSS, and electron-builder. The renderer uses a camera-relative floating origin and logarithmic depth. CPU positions are double precision; one render unit equals 1,000 km. Near clip is 1 mm and the far clip is about 10,570 light-years. Free flight has no scene boundary, but content consists of this solar system and its star background; other star systems are not generated.
+Electron 44.9.2, Three.js/WebGL 2, modular JavaScript, locally compiled Tailwind CSS, and electron-builder. The renderer uses a camera-relative floating origin and logarithmic depth. CPU positions use double precision with a separate system reference anchor; one render unit equals 1,000 km. Near clip is 1 mm and the far clip is about 10,570 light-years. Free flight has no scene boundary, but content includes the Solar System, 55 catalog stars, generated planetary systems and a decorative galactic background.
 
 Planet positions use [JPL approximate elements and rates](https://ssd.jpl.nasa.gov/planets/approx_pos.html) and a Newton solution of Kepler’s equation. The Earth-Moon barycenter is split by mass ratio. The clock stops at the 1800–2050 model boundary. UTC is used as an approximation to ephemeris time. Light-time, TT/TDB, relativistic, and observer corrections are not applied. Moon, dwarf-planet, and asteroid orbits use simplified mean elements; phases are not precision predictions.
 

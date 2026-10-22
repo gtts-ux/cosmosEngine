@@ -1,14 +1,12 @@
-More convincing atmospheres, small moons, and seamless surface detail.
+Explore the local stellar neighborhood and build your own planetary systems.
 
-- Dense atmospheres now color and distort the view while obscuring distant planets, rings, stars and bloom. Nearby ground remains visible through depth-aware extinction. Venus and Titan have thick amber haze; giant planets have opaque cloud atmospheres.
-- Small moons are uneven ellipsoids rather than perfect spheres. Deimos, Phobos and the new small moons share consistent geometry, landing terrain and collision shapes. Pan/Atlas have equatorial ridges. Small moons retain physical sizes and appear smaller on arrival.
-- Added visible dark solar umbrae/penumbrae, with reduced close-up glare so sunspots remain visible.
-- Clicking a body, label, explorer entry or search result shows information without moving the camera. Click Go to or press G to travel. Lock orbit tracks from your current position.
-- Fixed white no-data gaps in incomplete spacecraft mosaics and replaced repeating procedural bands with spherical noise/craters. Fixed generated-map color encoding, wrapping, and thumbnail consistency.
-- Landing is disabled for the Sun, Jupiter, Saturn, Uranus and Neptune across UI, keyboard, navigation and automatic terrain.
-- Added Metis, Adrastea, Amalthea and Thebe at Jupiter; Pan, Daphnis, Atlas, Prometheus, Pandora, Epimetheus, Janus and Hyperion at Saturn. The catalog now has 50 bodies, including 33 moons.
-- Orbital color now blends through regional texture detail into fine material normals and roughness. Relief fades in during approach, keeping globe albedo consistent.
+- Added 55 nearby catalog stars beyond the Sun, including Proxima Centauri, Alpha Centauri A, Barnard’s Star, Sirius and Tau Ceti. Their approximate spatial positions come from HYG v4.1; the sky includes camera-relative, selectable star points and colored stellar surfaces.
+- The catalog now follows the system being inspected or physically visited. Choose Stars, search, or Browse system to preview another host without moving. Go to remains the travel action. A neighborhood overview frames the nearby stars.
+- Generate individual random, rocky, ocean, ice or gas planets around the browsed star. Names and seeds are optional. Seed system adds four fictional planets to an empty system.
+- Generated planets have host-relative Keplerian orbits, deterministic global textures, host-star illumination and automatic local terrain. Solid worlds are landable; stars and gas giants remain non-landable.
+- Saved generation recipes survive app restarts. The Solar System remains intact. Limits: 16 generated worlds per host and 256 total.
+- System-local CPU coordinates preserve metre-scale ground movement after travelling several light-years.
 
-Fine terrain, missing image coverage, small-body roughness and new-moon maps are reconstructions. Atmospheres and rotational orientations are approximate. The catalog is not every known satellite.
+Star positions are catalog approximations; stellar sizes/masses are estimates. Binary companions and proper motion are omitted. Generated planets are explicitly fictional; this is not an observed-exoplanet catalog. The derived star table is CC BY-SA 4.0 with attribution in DATA-LICENSE.md; application code remains MIT.
 
-Download x64 for Intel Macs or arm64 for Apple Silicon. macOS 12+; local ad-hoc signatures, without Apple notarization. The app runs offline.
+Download x64 for Intel Macs or arm64 for Apple Silicon. macOS 12+; local ad-hoc signatures, without Apple notarization. The installed app runs offline.

@@ -73,3 +73,7 @@ Exact downloaded URLs, credit labels, and SHA-256 hashes are recorded in `assets
 Small-moon mean orbit values and approximate axis dimensions: [NASA Jovian Satellite Fact Sheet](https://nssdc.gsfc.nasa.gov/planetary/factsheet/joviansatfact.html), [NASA Saturnian Satellite Fact Sheet](https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html), and [JPL satellite physical parameters](https://ssd.jpl.nasa.gov/sats/phys_par/). Phases, detailed shape roughness and new-moon maps are illustrative.
 
 White no-data coverage in the Charon and Triton spacecraft mosaics is filled at runtime with reconstructed material. Those regions are not additional spacecraft observations. Small-body meshes approximate published dimensions and do not reproduce mission shape models. Atmospheric colors, optical density, shimmer and sunspot activity are visual reconstructions.
+
+## Version 1.4 stellar neighborhood
+
+The 55 additional primary stellar entries derive from [HYG v4.1](https://github.com/astronexus/HYG-Database), David Nash / Astronomy Nexus, licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). The subset and coordinate transformations retain that data license; see DATA-LICENSE.md. `scripts/import-nearby-stars.py` can reproduce the subset from the checksum-pinned source table. Display aliases and spectral estimates were added. Catalog positions are not a current precision astrometric solution; binary companions are omitted. Generated planets and terrain are fictional and are not catalog exoplanet observations.

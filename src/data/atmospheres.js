@@ -10,5 +10,5 @@ const presets={
  neptune:{height:1200000,scale:110000,optical:100,color:'#457eae',distortion:.0005},
  pluto:{height:70000,scale:12000,optical:.004,color:'#759cc6',distortion:0},
 };
-export function atmosphereFor(id){return presets[id]||null;}
+export function atmosphereFor(body){const id=typeof body==='string'?body:body.atmospherePreset||body.id;return presets[id]||null;}
 export function verticalTransmission(id,altitude=0){const p=atmosphereFor(id);return p?Math.exp(-p.optical*Math.exp(-Math.max(0,altitude)/p.scale)):1;}

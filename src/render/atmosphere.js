@@ -45,14 +45,14 @@ export class AtmosphericPass extends ShaderPass {
     const u=this.uniforms,U=this.universe;u.optical.value=0;this.state={body:null,transmission:1,altitude:null};
     let closest=Infinity;
     for(const body of U.bodies){
-      const p=atmosphereFor(body.id);if(!p)continue;
+      const p=atmosphereFor(body);if(!p)continue;
       const R=U.radius(body.id),factor=R/(body.radius*1000),center=new THREE.Vector3(...U.renderPositions[body.id]).sub(origin);
       const altitude=(center.length()-R)/factor;
       if(altitude>p.height||altitude>=closest)continue;closest=altitude;
       u.center.value.copy(center);u.radius.value=R;u.top.value=R+p.height*factor;
       u.scaleHeight.value=p.scale*factor;u.optical.value=p.optical;u.tint.value.set(p.color);
-      u.sun.value.fromArray(U.renderPositions[body.id]).negate().normalize();u.distortion.value=p.distortion;
-      this.state={body:body.id,transmission:verticalTransmission(body.id,altitude),altitude};
+      u.sun.value.copy(U.lightDirection(body.id));u.distortion.value=p.distortion;
+      this.state={body:body.id,transmission:verticalTransmission(body,altitude),altitude};
     }
     u.inverseProjection.value.copy(U.camera.projectionMatrixInverse);u.cameraWorld.value.copy(U.camera.matrixWorld);
     u.logFar.value=Math.log2(U.camera.far+1);u.time.value=time;

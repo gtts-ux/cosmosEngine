@@ -48,11 +48,11 @@ export function positionFromElements(elements, eccentricAnomaly) {
     sw*si*x+cw*si*y,
     -((cw*sn+sw*cn*ci)*x+(-sw*sn+cw*cn*ci)*y)];
 }
-export function positionsAt(bodies, jd) {
+export function positionsAt(bodies, jd, origin=[0,0,0]) {
   const result = {};
   for (const body of bodies) {
     const el=elementsAt(body,jd);
-    const local=el?positionFromElements(el):[0,0,0];
+    const local=body.anchor?body.anchor.map((v,i)=>v-origin[i]):el?positionFromElements(el):!body.parent?origin.map(v=>-v):[0,0,0];
     const parent=result[body.parent] || [0,0,0];
     result[body.id]=local.map((v,i)=>v+parent[i]);
   }

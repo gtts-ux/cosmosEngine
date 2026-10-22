@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {noise2,seedFor} from '../data/surfaces.js';
 export function proceduralTexture(body) {
-  const w=1024,h=512,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+  const w=body.generated?512:1024,h=w/2,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
   const ctx=canvas.getContext('2d'),image=ctx.createImageData(w,h);
   const base=new THREE.Color(body.color).getRGB({},THREE.SRGBColorSpace),seed=seedFor(body.id);
   const craters=Array.from({length:32},(_,i)=>{
@@ -23,6 +23,13 @@ export function proceduralTexture(body) {
       if(d<1.2)f+=-.19*Math.max(0,1-d*d)+.1*Math.exp(-(((d-1)*12)**2));
     }
     if(body.procedural==='ice')f+=.08;
+    if(body.generated&&body.surfaceType==='gas')f=.8+.09*Math.sin(Y*44+noise2(X*4,Z*4,seed)*3)+(f-.76)*.25;
+    if(body.generated&&body.surfaceType==='ocean'){
+      const continent=noise2(X*3+noise2(Y*4,Z*4,seed+5),Z*3+Y*2,seed+17);
+      const rgb=Math.abs(Y)>.87?[235,243,248]:continent<.5?[12,42,110]:continent<.53?[195,172,112]:[58,98,49];
+      const shade=.9+(f-.76)*.25;for(let c=0;c<3;c++)image.data[i+c]=rgb[c]*shade;
+      image.data[i+3]=255;continue;
+    }
     image.data[i]=Math.min(245,base.r*255*f);image.data[i+1]=Math.min(245,base.g*255*f);image.data[i+2]=Math.min(245,base.b*255*f);image.data[i+3]=255;
   }
   ctx.putImageData(image,0,0);

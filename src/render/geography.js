@@ -19,7 +19,7 @@ export class SurfaceAtlas {
     const coords=surfaceCoordinates(direction.toArray()),a=this.pixels(body);
     const x=Math.min(a.width-1,Math.floor(coords.u*a.width)),y=Math.min(a.height-1,Math.floor(coords.v*a.height));
     const i=(y*a.width+x)*4,rgb=[a.data[i],a.data[i+1],a.data[i+2]];
-    const biome=body.id==='earth'?earthBiome(rgb):null;
+    const biome=(body.id==='earth'||body.surfaceType==='ocean')?earthBiome(rgb):null;
     let profile=surfaceProfile(body,biome);
     if(body.id==='earth'&&biome==='ice')profile={type:'ice',title:'Snow and ice',tint:'#d9e1e4',relief:8,air:1};
     if(body.id==='earth'&&biome==='rock')profile={type:'rock',title:'Rocky terrain',tint:'#a39e8f',relief:12,air:1};

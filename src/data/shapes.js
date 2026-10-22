@@ -1,3 +1,4 @@
+import {isStar} from './systems.js';
 // Approximate body-fixed ellipsoids with smooth, deterministic shape detail.
 // Axis ratios come from published dimensions; these are not spacecraft shape models.
 export function shapeFactor(body,[x,y,z]){
@@ -9,5 +10,5 @@ export function shapeFactor(body,[x,y,z]){
   const ridge=body.ridge?body.ridge*Math.exp(-((y/.13)**2)):0;
   return ellipsoid*(1+bump+ridge);
 }
-export function canLand(body){return body.id!=='sun'&&!['jupiter','saturn','uranus','neptune'].includes(body.id);}
+export function canLand(body){return !isStar(body)&&body.surfaceType!=='gas'&&!['jupiter','saturn','uranus','neptune'].includes(body.id);}
 export function approachScale(body){return Math.max(body.id==='saturn'||body.id==='uranus'?8.2:5.1,body.radius<150?120/body.radius:0);}

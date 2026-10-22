@@ -25,6 +25,17 @@ const profiles = {
   makemake:{...ice,title:'Methane frost and reddish deposits',tint:'#c7ae96',relief:12},
 };
 export function surfaceProfile(body,biome='grass') {
+  if(body.generated){
+    if(body.surfaceType==='gas')return {type:'cloud',title:'Generated cloud atmosphere',tint:body.color,relief:0,air:2};
+    if(body.surfaceType==='ice')return {...ice,title:'Generated ice and frost'};
+    if(body.surfaceType==='ocean'){
+      if(biome==='water')return {type:'water',title:'Generated ocean',tint:'#156477',relief:0,air:1};
+      if(biome==='sand')return {type:'sand',title:'Generated coast and sand',tint:'#c5af80',relief:5,air:1};
+      if(biome==='ice')return {...ice,title:'Generated polar ice',air:1};
+      return {type:'grass',title:'Generated vegetation',tint:body.color,relief:7,air:1};
+    }
+    return {...rock,title:'Generated rocky terrain',tint:body.color,air:.3};
+  }
   if(GAS_GIANTS.has(body.id))return {type:'cloud',title:'Turbulent cloud tops',tint:body.color,relief:160,air:2};
   if(body.id==='earth') {
     if(biome==='sand')return {type:'sand',title:'Sand and desert',tint:'#e9d5aa',relief:4,air:1};

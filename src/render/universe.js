@@ -5,7 +5,9 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { AU, J2000, positionsAt, sampleOrbit } from '../physics/orbits.js';
 import { sphereVertex, surfaceFragment, atmosphereFragment, cloudFragment, sunFragment, ringFragment } from './shaders.js';
-import { solidTexture } from './textures.js';
+import {isStar,hostStarId} from '../data/systems.js';
+import {atmosphereFor} from '../data/atmospheres.js';
+import { solidTexture,proceduralTexture } from './textures.js';
 import { AtmosphericPass } from './atmosphere.js';
 import { shapeFactor } from '../data/shapes.js';
 import { LandingTerrain } from './landing.js';
@@ -23,8 +25,8 @@ function shapeGeometry(body,segments){
 function seeded(seed) { return ()=>{ seed=(Math.imul(seed,1664525)+1013904223)|0;return (seed>>>0)/4294967296; }; }
 export class Universe {
   constructor(canvas,bodies,textures,settings) {
-    this.bodies=bodies;this.settings=settings;this.textures=textures;this.nodes=new Map();
-    this.positions={};this.renderPositions={};this.origin=new THREE.Vector3();this.drawCount=0;
+    this.bodies=[];this.settings=settings;this.textures=textures;this.nodes=new Map();
+    this.referenceSystem='sun';this.referenceAnchor=[0,0,0];this.positions={};this.renderPositions={};this.origin=new THREE.Vector3();this.drawCount=0;
     this.scene=new THREE.Scene();
     this.camera=new THREE.PerspectiveCamera(48,1,1e-9,1e14);
     this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,logarithmicDepthBuffer:true,powerPreference:'high-performance'});
@@ -53,40 +55,51 @@ export class Universe {
     this.scene.add(this.sunLight);
     const geo=new THREE.SphereGeometry(1,96,64);
     this.lowSphere=geo;this.surfaceSphere=new THREE.SphereGeometry(1,1024,512);
-    const black=solidTexture(0,0,0),normal=solidTexture(128,128,255);
+    this.black=solidTexture(0,0,0);this.normal=solidTexture(128,128,255);
+    this.addBodies(bodies);
+    this.createStars();this.createNearbyStars();
+    this.landing=new LandingTerrain(this);
+    this.setSettings(settings);
+  }
+  addBodies(bodies){
+    const geo=this.lowSphere,black=this.black,normal=this.normal;
     for(const b of bodies) {
+      if(this.nodes.has(b.id))continue;
+      this.bodies.push(b);
+      if(!this.textures.has(b.texture||b.id))this.textures.set(b.id,proceduralTexture(b));
       const group=new THREE.Group();this.scene.add(group);
       const spin=new THREE.Group();group.add(spin);
       // Axial tilts are visual orientations, not full IAU rotational elements.
       spin.rotation.z=THREE.MathUtils.degToRad(b.tilt||0);
       const airColor=new THREE.Color(b.id==='mars'?'#d78858':b.id==='venus'||b.id==='titan'?'#eeb972':b.id==='saturn'?'#d4bd8d':b.id==='jupiter'?'#ccb596':b.id==='uranus'?'#8ccad2':'#429bff');
-      const hasAir=['earth','mars','venus','jupiter','saturn','uranus','neptune','titan'].includes(b.id);
+      const hasAir=!!atmosphereFor(b);
       const uniforms={
+        stellarTint:{value:new THREE.Color(b.id==='sun'?'#ffffff':isStar(b)?b.color:'#ffffff')},stellarBlend:{value:isStar(b)&&b.id!=='sun'?1:0},
         detailCenter:{value:new THREE.Vector3(0,1,0)},detailCut:{value:-1},
-        dayMap:{value:textures.get(b.texture||b.id)},nightMap:{value:b.id==='earth'?textures.get('2k_earth_nightmap.jpg'):black},
-        normalMap:{value:b.id==='earth'?textures.get('earth-normal.png'):normal},specMap:{value:b.id==='earth'?textures.get('earth-specular.png'):black},
+        dayMap:{value:this.textures.get(b.texture||b.id)},nightMap:{value:b.id==='earth'?this.textures.get('2k_earth_nightmap.jpg'):black},
+        normalMap:{value:b.id==='earth'?this.textures.get('earth-normal.png'):normal},specMap:{value:b.id==='earth'?this.textures.get('earth-specular.png'):black},
         sunDirection:{value:new THREE.Vector3(1,0,0)},atmosphereColor:{value:airColor},
         hasNight:{value:b.id==='earth'?1:0},hasNormal:{value:b.id==='earth'?1:0},
         hasSpecular:{value:b.id==='earth'?1:0},hasAtmosphere:{value:hasAir?1:0},
         time:{value:0},radius:{value:1},ringOuter:{value:b.id==='saturn'?2.35:b.id==='uranus'?2:0},
         ringNormal:{value:new THREE.Vector3(0,1,0)},center:{value:new THREE.Vector3()},
-        shadowEnabled:{value:settings.shadows?1:0},occluder:{value:new THREE.Vector3()},occluderRadius:{value:0},
+        shadowEnabled:{value:this.settings.shadows?1:0},occluder:{value:new THREE.Vector3()},occluderRadius:{value:0},
       };
       const shapeLow=b.axes?shapeGeometry(b,96):geo,shapeHigh=b.axes?shapeGeometry(b,256):this.surfaceSphere;
-      const mesh=new THREE.Mesh(shapeLow,material(b.id==='sun'?sunFragment:surfaceFragment,uniforms));
+      const mesh=new THREE.Mesh(shapeLow,material(isStar(b)?sunFragment:surfaceFragment,uniforms));
       mesh.userData.body=b;spin.add(mesh);
-      const node={body:b,group,spin,mesh,uniforms,shapeLow,shapeHigh,radius:b.radius/KM_PER_UNIT};
-      if(hasAir||b.id==='sun') {
+      const node={body:b,hostId:isStar(b)?b.id:this.nodes.get(b.parent)?.hostId||'sun',group,spin,mesh,uniforms,shapeLow,shapeHigh,radius:b.radius/KM_PER_UNIT};
+      if(hasAir||isStar(b)) {
         const atmosphere=new THREE.Mesh(geo,material(atmosphereFragment,{
-          sunDirection:uniforms.sunDirection,atmosphereColor:{value:b.id==='sun'?new THREE.Color('#ff8b32'):airColor},
-          strength:{value:b.id==='sun'?1.2:b.id==='mars'?.45:1.15},
+          sunDirection:uniforms.sunDirection,atmosphereColor:{value:isStar(b)?new THREE.Color(b.color):airColor},
+          strength:{value:isStar(b)?1.2:b.id==='mars'?.45:1.15},
         },{transparent:true,side:THREE.BackSide,blending:THREE.AdditiveBlending,depthWrite:false}));
-        atmosphere.scale.setScalar(b.id==='sun'?1.16:b.id==='venus'||b.id==='titan'?1.055:1.025);
+        atmosphere.scale.setScalar(isStar(b)?1.16:b.id==='venus'||b.id==='titan'?1.055:1.025);
         spin.add(atmosphere);node.atmosphere=atmosphere;
       }
       if(b.id==='earth'){
         node.clouds=new THREE.Mesh(geo,material(cloudFragment,{
-          cloudMap:{value:textures.get('2k_earth_clouds.jpg')},sunDirection:uniforms.sunDirection,
+          cloudMap:{value:this.textures.get('2k_earth_clouds.jpg')},sunDirection:uniforms.sunDirection,
         },{transparent:true,depthWrite:false}));
         node.clouds.scale.setScalar(1.0018);spin.add(node.clouds);
       }
@@ -106,14 +119,50 @@ export class Universe {
       }
       this.nodes.set(b.id,node);
     }
-    this.createStars();
-    this.landing=new LandingTerrain(this);
-    this.setSettings(settings);
+    this.lastOrbitJD=undefined;
+  }
+  rebase(hostId,flight){
+    if(hostId===this.referenceSystem)return;
+    const anchor=this.nodes.get(hostId)?.body.anchor||[0,0,0];
+    const delta=new THREE.Vector3(...anchor.map((v,i)=>(v-this.referenceAnchor[i])/KM_PER_UNIT));
+    if(flight){flight.position.sub(delta);flight.lastTarget.sub(delta);if(flight.warp)flight.warp.start.sub(delta);if(flight.surfaceFrame)flight.surfaceFrame.center.sub(delta);}
+    this.origin.sub(delta);this.referenceAnchor=[...anchor];this.referenceSystem=hostId;
+    this.updatePositions(this.lastJD||J2000);
+  }
+  closestStar(position){
+    let best=null,distance=Infinity;
+    for(const node of this.nodes.values())if(isStar(node.body)){
+      const d=position.distanceTo(new THREE.Vector3(...(this.renderPositions[node.body.id]||node.body.anchor?.map(v=>v/KM_PER_UNIT)||[0,0,0])));
+      if(d<distance){distance=d;best=node;}
+    }
+    return best;
+  }
+  lightDirection(id){
+    const n=this.nodes.get(id),p=this.renderPositions[id],star=this.renderPositions[n.hostId]||[0,0,0];
+    return new THREE.Vector3(...star).sub(new THREE.Vector3(...p)).normalize();
+  }
+  createNearbyStars(){
+    this.starIds=this.bodies.filter(isStar).map(b=>b.id);
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(this.starIds.length*3),3));
+    geo.setAttribute('color',new THREE.Float32BufferAttribute(this.starIds.flatMap(id=>new THREE.Color(this.nodes.get(id).body.color).toArray()),3));
+    geo.setAttribute('size',new THREE.Float32BufferAttribute(new Float32Array(this.starIds.length),1));
+    const mat=new THREE.ShaderMaterial({vertexColors:true,transparent:true,depthWrite:false,
+      vertexShader:`#include <common>
+#include <logdepthbuf_pars_vertex>
+attribute float size;varying vec3 c;void main(){c=color;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1);gl_PointSize=size;
+#include <logdepthbuf_vertex>
+}`,
+      fragmentShader:`#include <common>
+#include <logdepthbuf_pars_fragment>
+varying vec3 c;void main(){
+#include <logdepthbuf_fragment>
+float d=length(gl_PointCoord-.5);if(d>.5)discard;gl_FragColor=vec4(c*2.0,smoothstep(.5,.05,d));}`});
+    this.nearbyStars=new THREE.Points(geo,mat);this.nearbyStars.frustumCulled=false;this.scene.add(this.nearbyStars);
   }
   radius(id) {
     const b=this.nodes.get(id).body;
     // Balanced mode enlarges bodies but leaves heliocentric distances unchanged.
-    return b.radius/KM_PER_UNIT*(this.settings.balanced?(b.id==='sun'?3:b.kind==='Planet'?Math.max(8,80/Math.sqrt(b.radius/6371)):b.radius<150?4:60):1);
+    return b.radius/KM_PER_UNIT*(this.settings.balanced?(isStar(b)?3:b.kind==='Planet'?Math.max(8,80/Math.sqrt(b.radius/6371)):b.radius<150?4:60):1);
   }
   createStars(){
     const rand=seeded(72583),count=16000,pos=new Float32Array(count*3),colors=new Float32Array(count*3),sizes=new Float32Array(count);
@@ -150,7 +199,7 @@ export class Universe {
     this.bloom.setSize(w*this.renderer.getPixelRatio()*.65,h*this.renderer.getPixelRatio()*.65);
   }
   updatePositions(jd) {
-    this.positions=positionsAt(this.bodies,jd);
+    this.lastJD=jd;this.positions=positionsAt(this.bodies,jd,this.referenceAnchor);
     for(const b of this.bodies){
       let p=this.positions[b.id].map(v=>v/KM_PER_UNIT);
       if(this.settings.balanced && b.parent && b.parent!=='sun'){
@@ -174,12 +223,14 @@ export class Universe {
   }
   updateScene(jd,time,origin,flight) {
     this.origin.copy(origin);this.camera.position.set(0,0,0);this.camera.updateMatrixWorld();
+    const primary=this.closestStar(origin);this.activeSystem=primary?.body.id||'sun';
     let insideDayAtmosphere=false;
     for(const node of this.nodes.values()){
       const b=node.body;
-      node.mesh.visible=true;
+      node.group.visible=isStar(b)||node.hostId===this.activeSystem;
+      node.mesh.visible=!isStar(b)||this.radius(b.id)/Math.max(this.radius(b.id),new THREE.Vector3(...this.renderPositions[b.id]).distanceTo(origin))>.00015;
       if(node.clouds)node.clouds.visible=true;
-      if(node.atmosphere)node.atmosphere.visible=true;
+      if(node.atmosphere)node.atmosphere.visible=node.mesh.visible;
       node.group.position.fromArray(this.renderPositions[b.id]).sub(origin);
       const radius=this.radius(b.id);node.group.scale.setScalar(radius);node.radius=radius;
       node.mesh.geometry=node.group.position.length()<radius*1.15?node.shapeHigh:node.shapeLow;
@@ -187,9 +238,9 @@ export class Universe {
       if(node.clouds)node.clouds.rotation.y=node.mesh.rotation.y+((jd-J2000)/7.5*Math.PI*2)%(Math.PI*2);
       node.uniforms.radius.value=radius;node.uniforms.center.value.copy(node.group.position);
       node.uniforms.time.value=time;
-      node.uniforms.sunDirection.value.fromArray(this.renderPositions[b.id]).negate().normalize();
-      if(b.id==='sun')node.uniforms.sunDirection.value.copy(node.group.position).negate().normalize();
-      if(node.atmosphere && b.id!=='sun' && node.group.position.length()<radius*1.025 &&
+      node.uniforms.sunDirection.value.copy(this.lightDirection(b.id));
+      if(isStar(b))node.uniforms.sunDirection.value.copy(node.group.position).negate().normalize();
+      if(node.atmosphere && !isStar(b) && node.group.position.length()<radius*1.025 &&
         node.group.position.clone().negate().normalize().dot(node.uniforms.sunDirection.value)>0)insideDayAtmosphere=true;
       node.uniforms.ringNormal.value.set(0,1,0).applyQuaternion(node.spin.quaternion);
       if(node.ring)node.ring.material.uniforms.sunLocal.value.copy(node.uniforms.sunDirection.value).applyQuaternion(node.spin.quaternion.clone().invert());
@@ -206,15 +257,23 @@ export class Universe {
       node.uniforms.occluderRadius.value=candidate?this.radius(candidate.id):0;
       if(candidate)node.uniforms.occluder.value.fromArray(this.renderPositions[candidate.id]).sub(origin);
       if(node.orbit){
-        node.orbit.visible=this.settings.orbitLines;
+        node.orbit.visible=this.settings.orbitLines&&node.hostId===this.activeSystem;
         node.orbit.position.fromArray(this.renderPositions[b.parent]||[0,0,0]).sub(origin);
       }
     }
     this.stars.visible=!insideDayAtmosphere;
     this.scene.backgroundIntensity=insideDayAtmosphere?.012:.18;
-    this.sunLight.position.copy(this.nodes.get('sun').group.position);
-    const sunNode=this.nodes.get('sun');
-    this.bloom.strength=this.settings.bloom*(sunNode.radius/Math.max(sunNode.radius,sunNode.group.position.length())>.025?.32:1);
+    if(primary){this.sunLight.position.copy(primary.group.position);this.sunLight.color.set(primary.body.color);}
+    const angular=primary?primary.radius/Math.max(primary.radius,primary.group.position.length()):0;
+    this.bloom.strength=this.settings.bloom*(angular>.025?.32:1);
+    const starPositions=this.nearbyStars.geometry.attributes.position,starSizes=this.nearbyStars.geometry.attributes.size;
+    for(let i=0;i<this.starIds.length;i++){
+      const n=this.nodes.get(this.starIds[i]),p=n.group.position,d=p.length(),ly=d*KM_PER_UNIT/9.4607304725808e12;
+      starPositions.setXYZ(i,p.x,p.y,p.z);
+      const luminosity=n.body.id==='sun'?1:n.body.catalogLuminosity||.00001;
+      starSizes.setX(i,n.radius/Math.max(d,n.radius)>.002?0:THREE.MathUtils.clamp(3.5-Math.log10(Math.max(.001,ly))*.7+Math.log10(luminosity)*.35,1.5,8)*this.renderer.getPixelRatio());
+    }
+    starPositions.needsUpdate=true;starSizes.needsUpdate=true;
     this.landing.update(flight,time);
     this.airPass.update(origin,time);
     this.scene.updateMatrixWorld();
@@ -226,12 +285,15 @@ export class Universe {
   pick(clientX,clientY){
     const point=new THREE.Vector2(clientX/window.innerWidth*2-1,-clientY/window.innerHeight*2+1);
     const ray=new THREE.Raycaster();ray.setFromCamera(point,this.camera);
-    const hits=ray.intersectObjects([...this.nodes.values()].map(n=>n.mesh),false);
-    return hits[0]?.object.userData.body.id;
+    const hits=ray.intersectObjects([...this.nodes.values()].filter(n=>n.group.visible&&n.mesh.visible).map(n=>n.mesh),false);
+    let star=null,miss=12;
+    for(const id of this.starIds){const p=this.project(id);if(!p)continue;const d=Math.hypot(p.x-clientX,p.y-clientY);
+      if(d<miss&&(!hits[0]||this.nodes.get(id).group.position.length()<hits[0].distance)){miss=d;star=id;}}
+    return star||hits[0]?.object.userData.body.id;
   }
   project(id){
     if(this.airPass.state.transmission<.02&&id!==this.airPass.state.body)return null;
-    const n=this.nodes.get(id),v=n.group.position.clone(),forward=new THREE.Vector3(0,0,-1).applyQuaternion(this.camera.quaternion);
+    const n=this.nodes.get(id);if(!n.group.visible)return null;const v=n.group.position.clone(),forward=new THREE.Vector3(0,0,-1).applyQuaternion(this.camera.quaternion);
     if(v.dot(forward)<=0)return null;
     v.project(this.camera);
     if(Math.abs(v.x)>1||Math.abs(v.y)>1)return null;
@@ -240,6 +302,6 @@ export class Universe {
   getDiagnostics(){
     return {webgl:this.renderer.getContext().getParameter(this.renderer.getContext().VERSION),frames:this.drawCount,
       shaderError:this.shaderError||null,geometries:this.renderer.info.memory.geometries,textures:this.renderer.info.memory.textures,
-      logarithmicDepthBuffer:this.renderer.capabilities.logarithmicDepthBuffer,bodies:this.nodes.size,atmosphere:{...this.airPass.state},texturesRepaired:[...this.textures.entries()].filter(([,t])=>t.userData.repairedPixels).map(([name,t])=>({name,pixels:t.userData.repairedPixels})),irregularBodies:this.bodies.filter(b=>b.axes).map(b=>b.id),landing:this.landing.diagnostics()};
+      logarithmicDepthBuffer:this.renderer.capabilities.logarithmicDepthBuffer,referenceSystem:this.referenceSystem,referenceAnchorKM:[...this.referenceAnchor],bodies:this.nodes.size,nearbyStars:this.starIds.length,activeSystem:this.activeSystem,atmosphere:{...this.airPass.state},texturesRepaired:[...this.textures.entries()].filter(([,t])=>t.userData.repairedPixels).map(([name,t])=>({name,pixels:t.userData.repairedPixels})),irregularBodies:this.bodies.filter(b=>b.axes).map(b=>b.id),landing:this.landing.diagnostics()};
   }
 }

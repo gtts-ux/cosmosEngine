@@ -143,7 +143,7 @@ try {
   checks.push('Missing spacecraft coverage is repaired and small moons use irregular geometry');
   for(const [altitude,level] of [[6800,'regional'],[3000,'regional'],[100,'local']]){
     await page.evaluate(alt=>window.__cosmos.place('earth',23,13,alt),altitude);
-    await page.waitForFunction(()=>window.__cosmos.diagnostics().landing.visible);
+    await page.waitForFunction(level=>{const d=window.__cosmos.diagnostics();return d.landing.visible&&d.landing.detailLevel===level;},level);
     assert.equal((await state()).landing.detailLevel,level);
     await page.screenshot({path:`test-output/lod-${altitude}.png`});
   }

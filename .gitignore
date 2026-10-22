@@ -9,3 +9,5 @@ test-output/
 assets/textures/
 build/icon.iconset/
 build/icon.png
+
+.systems-test-profile/

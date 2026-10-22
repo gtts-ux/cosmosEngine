@@ -131,7 +131,7 @@ float snoise(vec3 v){
 export const sunFragment = /* glsl */`
   #include <common>
   #include <logdepthbuf_pars_fragment>
-  uniform float time;
+  uniform float time,stellarBlend;uniform vec3 stellarTint;
   uniform sampler2D dayMap;
   varying vec2 vUv;
   varying vec3 vLocal,vNormal,vPoint;
@@ -142,7 +142,7 @@ export const sunFragment = /* glsl */`
     float fine=snoise(vLocal*80.0-vec3(time*.05));
     float limb=pow(max(dot(normalize(vNormal),normalize(cameraPosition-vPoint)),0.0),.3);
     vec3 map=texture2D(dayMap,vUv).rgb;
-    vec3 color=vec3(1.0,.62,.24)*(1.15+n*.12+fine*.06)*(map.r*.6+.4)*(.75+limb*.25);
+    vec3 color=mix(vec3(1.0,.62,.24),stellarTint,stellarBlend)*(1.15+n*.12+fine*.06)*(map.r*.6+.4)*(.75+limb*.25);
     // Body-fixed active regions: dark umbrae inside softer penumbrae.
     vec3 d=normalize(vLocal);float spot=0.0;
     for(int i=0;i<14;i++){

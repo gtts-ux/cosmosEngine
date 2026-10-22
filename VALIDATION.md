@@ -1,15 +1,11 @@
-# Version 1.3 validation — 22 October 2026
+# Version 1.4 validation — 22 October 2026
 
-Hardware: Intel Mac, macOS 14.8.2. Electron 44.9.2, Three.js 0.186.1, Node.js 24.21.0. Runtime network requests are blocked during desktop tests.
+Development hardware: Intel Mac, macOS 14.8.2. Electron 44.9.2, Three.js 0.186.1, Node.js 24.21.0. Desktop tests block HTTP/HTTPS and use isolated test profiles.
 
-The 19 numerical tests cover orbital positions/time, settings, geography, terrain, telescope bounds, landing eligibility, irregular shapes, new satellite orbits and atmospheric transmission.
+The 23 numerical checks cover orbital mechanics, time, settings, geography, terrain, telescope limits, landing restrictions, irregular shapes, atmospheres, 55 added stellar entries, deterministic generation, parent-system membership, physical system detection, recipe validation and system-local position precision.
 
-Desktop checks cover all 50 bodies and automatic terrain on all 45 solid worlds. They exercise information-only selection, explicit Go to, stationary orbit locking, surface descent and streaming, telescope controls, accelerated-time tracking, every landing rejection path, repaired image coverage, material LOD transitions, persistence and renderer isolation. Rendering probes check nearby ocean contrast through air and visible sunspot contrast; screenshots cover atmospheres, terrain levels and irregular bodies.
+The original desktop checks cover the existing Solar System, selection/travel, navigation, terrain, atmospheres, sunspots, graphics and IPC restrictions. A separate systems test covers star/system browsing without travel, generation through the UI, extrasolar travel, local-coordinate landing/walking, generated-gas landing rejection, system seeding, neighborhood overview, return to Solar System, invalid generation requests and recipe restoration after restarting the application.
 
-The release workflow builds Intel and Apple Silicon installers, runs numerical tests and verifies DMG integrity. Only Intel runtime behavior is tested on this machine. Builds use ad-hoc signatures and are not Apple notarized.
+The release workflow runs the numerical tests and packages/verifies both macOS architectures. Only Intel runtime behavior is tested on this development hardware. Builds use ad-hoc signatures and are not Apple notarized.
 
-Limits: satellite phases and spin axes are approximate. Shape details, fine terrain and white no-data image areas are reconstructed. Atmosphere presets use approximate extinction/scattering and optical shimmer. The new moons have procedural maps. No claim of surveyed elevation or spacecraft shape-model accuracy is made.
-
-Both the source app and packaged Intel app passed all 21 desktop check groups with no renderer or shader errors. All 19 numerical tests passed. The final stationary Earth orbital view reported 60 FPS at medium quality; this is one local observation, not a guarantee for every scene or hardware configuration.
-
-Both local app bundles passed `codesign --verify --deep --strict`; both local DMGs passed `hdiutil verify`. [The public v1.3.0 release](https://github.com/gtts-ux/cosmosEngine/releases/tag/v1.3.0) contains Intel and Apple Silicon DMGs and SHA-256 checksums. [The release workflow](https://github.com/gtts-ux/cosmosEngine/actions/runs/39772078906) completed successfully for both architectures and publication.
+Limits: the HYG v4.1 subset is a static approximate catalog snapshot of primary entries. Proper motion, companions and binary dynamics are omitted. Spectral stellar properties are estimates. Generated planets, maps and fine terrain are fictional reconstructions. Keplerian planetary motion ignores mutual perturbations.

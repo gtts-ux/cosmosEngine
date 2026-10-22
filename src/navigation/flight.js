@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {isStar} from '../data/systems.js';
 import {canLand,approachScale} from '../data/shapes.js';
 import { telescopeZoom } from '../data/geography.js';
 import { KM_PER_UNIT } from '../render/universe.js';
@@ -73,11 +74,12 @@ export class Flight {
   lookAt(target,up=yAxis){this.matrix.lookAt(this.position,target,up);this.camera.quaternion.setFromRotationMatrix(this.matrix);}
   offsetFor(id,scale=5.1){
     const point=new THREE.Vector3(...this.universe.renderPositions[id]);
-    const towardsSun=point.negate().normalize();if(id==='sun')towardsSun.set(0,0,1);
+    const towardsSun=this.universe.lightDirection(id);if(isStar(this.universe.nodes.get(id).body))towardsSun.set(0,0,1);
     return towardsSun.applyAxisAngle(yAxis,.62).add(new THREE.Vector3(0,.26,0)).normalize().multiplyScalar(this.universe.radius(id)*scale);
   }
   visit(id,instant=false,kind='orbit'){
     if(kind==='land'&&!canLand(this.universe.nodes.get(id).body))return false;
+    this.universe.rebase(this.universe.nodes.get(id).hostId,this);
     const previous=this.target;this.target=id;this.velocity.set(0,0,0);this.keys.clear();this.surfaceFrame=null;
     let offset=this.offsetFor(id,approachScale(this.universe.nodes.get(id).body));
     if(kind==='land'){
@@ -102,9 +104,19 @@ export class Flight {
     this.mode='orbit';this.lastTarget.copy(target);this.lookAt(target);this.onModeChange('orbit');
   }
   orbit(){this.visit(this.target);}
-  overview(){
+  overview(hostId='sun'){
+    this.universe.rebase(hostId,this);this.camera.zoom=1;this.camera.updateProjectionMatrix();
+    this.target=hostId;this.mode='orbit';this.velocity.set(0,0,0);this.keys.clear();this.surfaceFrame=null;
+    this.theta=.3;this.phi=.6;const orbits=this.universe.bodies.filter(b=>b.parent===hostId&&b.orbit).map(b=>b.orbit[0]);
+    this.distance=Math.max(149597870.7/KM_PER_UNIT*(hostId==='sun'?7:.5),...orbits.map(a=>a/KM_PER_UNIT*2.7));
+    this.warp={start:this.position.clone(),startQuaternion:this.camera.quaternion.clone(),offset:new THREE.Vector3().setFromSpherical(new THREE.Spherical(this.distance,this.phi,this.theta)),elapsed:0,duration:2.4};
+    this.onModeChange('orbit');
+  }
+  neighborhood(){
+    this.universe.rebase('sun',this);this.camera.zoom=1;this.camera.updateProjectionMatrix();
     this.target='sun';this.mode='orbit';this.velocity.set(0,0,0);this.keys.clear();this.surfaceFrame=null;
-    this.theta=.3;this.phi=.6;this.distance=149597870.7/KM_PER_UNIT*7;
+    this.theta=.35;this.phi=1.1;const radius=Math.max(...this.universe.bodies.filter(isStar).map(b=>Math.hypot(...(b.anchor||[0,0,0]))))/KM_PER_UNIT;
+    this.distance=radius/Math.sin(THREE.MathUtils.degToRad(this.camera.fov/2))*1.2;
     this.warp={start:this.position.clone(),startQuaternion:this.camera.quaternion.clone(),offset:new THREE.Vector3().setFromSpherical(new THREE.Spherical(this.distance,this.phi,this.theta)),elapsed:0,duration:2.4};
     this.onModeChange('orbit');
   }
@@ -125,11 +137,11 @@ export class Flight {
       this.position.lerpVectors(w.start,target.clone().add(w.offset),smooth);
       this.matrix.lookAt(this.position,target,yAxis);
       const q=pose?.q||new THREE.Quaternion().setFromRotationMatrix(this.matrix);
-      this.camera.quaternion.slerpQuaternions(w.startQuaternion,q,Math.min(1,t*3));if(t===1)this.warp=null;
+      this.camera.quaternion.slerpQuaternions(w.startQuaternion,q,Math.min(1,t*3));if(t===1){this.position.copy(target).add(w.offset);this.warp=null;}
     }else if(this.mode==='orbit'){
       const offset=new THREE.Vector3().setFromSpherical(new THREE.Spherical(this.distance,this.phi,this.theta));
       const body=this.universe.nodes.get(this.target).body,base=this.universe.radius(this.target),factor=base/(body.radius*1000);
-      if(body.id!=='sun'&&this.distance<base+50000*factor){
+      if(canLand(body)&&this.distance<base+50000*factor){
         const local=offset.clone().normalize().applyQuaternion(this.universe.landing.bodyRotation(this.target).invert());
         const floor=base+(this.universe.landing.groundHeight(body,local)+5)*factor;
         if(offset.length()<floor)offset.setLength(floor);
@@ -159,7 +171,7 @@ export class Flight {
     for(const b of this.universe.bodies){
       const center=new THREE.Vector3(...this.universe.renderPositions[b.id]),base=this.universe.radius(b.id),factor=base/(b.radius*1000);
       let radius=base+5*factor;
-      if(b.id!=='sun'&&this.position.distanceTo(center)<base+50000*factor){
+      if(canLand(b)&&this.position.distanceTo(center)<base+50000*factor){
         radius=base+(this.universe.landing.groundHeight(b,this.universe.landing.localDirection(b.id,this.position))+5)*factor;
       }
       const relative=previous.clone().sub(center);let t=length2?Math.max(0,Math.min(1,-relative.dot(movement)/length2)):0;
