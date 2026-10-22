@@ -25,8 +25,8 @@ try {
   await createIcon(page);
   const state=()=>page.evaluate(()=>window.__cosmos.diagnostics());
   const settle=()=>page.waitForFunction(()=>!window.__cosmos.diagnostics().warp,{},{timeout:20000});
-  let d=await state();assert.ok(d.webgl.includes('WebGL 2'));assert.equal(d.bodies,BODIES.length);assert.equal(d.shaderError,null);assert.equal(d.logarithmicDepthBuffer,true);
-  checks.push(`WebGL2 rendering, ${BODIES.length} bodies, logarithmic depth, no shader errors`);
+  let d=await state();assert.ok(d.webgl.includes('WebGL 2'));assert.ok(d.bodies>BODIES.length);assert.ok(d.automaticBodies>=220);assert.equal(d.shaderError,null);assert.equal(d.logarithmicDepthBuffer,true);
+  checks.push(`WebGL2 rendering, ${d.bodies} bodies, logarithmic depth, no shader errors`);
   await page.locator('#pause').click();
   const startJD=(await state()).jd;
   await page.waitForTimeout(300);assert.equal((await state()).jd,startJD);

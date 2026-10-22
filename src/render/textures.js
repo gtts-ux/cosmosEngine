@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import {noise2,seedFor} from '../data/surfaces.js';
-export function proceduralTexture(body) {
-  const w=body.generated?2048:1024,h=w/2,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
-  const ctx=canvas.getContext('2d'),image=ctx.createImageData(w,h);
+export function proceduralPixels(body,w=1024) {
+  const h=w/2,image={data:new Uint8ClampedArray(w*h*4)};
   const base=new THREE.Color(body.color).getRGB({},THREE.SRGBColorSpace),seed=seedFor(body.id);
   const craters=Array.from({length:32},(_,i)=>{
     const y=noise2(i,0,seed)*2-1,a=i*2.399963,r=Math.sqrt(1-y*y);
@@ -51,8 +50,13 @@ export function proceduralTexture(body) {
     if(body.procedural==='ice')f+=Math.pow(1-Math.abs(Math.sin(X*46+Y*29+noise2(Y*8,Z*8,seed)*4)),30)*-.09;
     image.data[i]=Math.min(245,base.r*255*(f+mineral*.1));image.data[i+1]=Math.min(245,base.g*255*f);image.data[i+2]=Math.min(245,base.b*255*f);image.data[i+3]=255;
   }
-  ctx.putImageData(image,0,0);
-  const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=THREE.RepeatWrapping;return t;
+  return {width:w,height:h,data:image.data};
+}
+export function textureFromPixels({width,height,data}){
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;canvas.getContext('2d').putImageData(new ImageData(data,width,height),0,0);
+  const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=THREE.RepeatWrapping;t.anisotropy=8;return t;
+}
+export function proceduralTexture(body){return textureFromPixels(proceduralPixels(body,1024));
 }
 // Some spacecraft mosaics use edge-connected pure white for unsurveyed areas.
 // Preserve measured pixels; fill only that mask with a documented reconstruction.
@@ -94,5 +98,5 @@ export async function loadTextures(bodies,onProgress){
     t.wrapS=THREE.RepeatWrapping;t.wrapT=THREE.ClampToEdgeWrapping;t.anisotropy=8;
     textures.set(name,t);onProgress(++done/names.length);
   }));
-  for(const b of bodies)if(!b.texture)textures.set(b.id,proceduralTexture(b));return textures;
+  for(const b of bodies)if(!b.texture&&!b.generated)textures.set(b.id,proceduralTexture(b));return textures;
 }

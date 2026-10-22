@@ -4,13 +4,15 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { AU, J2000, positionsAt, sampleOrbit } from '../physics/orbits.js';
-import { sphereVertex, surfaceFragment, atmosphereFragment, cloudFragment, sunFragment, ringFragment } from './shaders.js';
+import { sphereVertex, surfaceFragment, atmosphereFragment, cloudFragment, sunFragment, ringFragment, gasFragment } from './shaders.js';
 import {isStar,hostStarId} from '../data/systems.js';
 import {atmosphereFor} from '../data/atmospheres.js';
-import { solidTexture,proceduralTexture } from './textures.js';
+import { solidTexture,proceduralTexture,textureFromPixels } from './textures.js';
 import { AtmosphericPass } from './atmosphere.js';
 import { shapeFactor,canLand } from '../data/shapes.js';
 import {isGasGiant} from '../data/surfaces.js';
+import {SurfaceJobs} from './surface-jobs.js';
+import {seedFor} from '../data/surfaces.js';
 import { LandingTerrain } from './landing.js';
 
 export const KM_PER_UNIT=1000;
@@ -27,8 +29,9 @@ function seeded(seed) { return ()=>{ seed=(Math.imul(seed,1664525)+1013904223)|0
 export class Universe {
   constructor(canvas,bodies,textures,settings) {
     this.bodies=[];this.settings=settings;this.textures=textures;this.nodes=new Map();
+    this.jobs=new SurfaceJobs();this.textureWork=new Map();this.textureLevels=new Map();this.textureUsed=new Map();this.highMaps=new Map();this.streamError=null;this.frameEMA=16.7;this.renderScale=.85;this.nextAdapt=0;
     this.referenceSystem='sun';this.referenceAnchor=[0,0,0];this.positions={};this.renderPositions={};this.origin=new THREE.Vector3();this.drawCount=0;
-    this.scene=new THREE.Scene();
+    this.scene=new THREE.Scene();this.scene.matrixWorldAutoUpdate=false;
     this.camera=new THREE.PerspectiveCamera(48,1,1e-9,1e14);
     this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,logarithmicDepthBuffer:true,powerPreference:'high-performance'});
     this.renderer.setClearColor(0x03060c,1);
@@ -55,7 +58,7 @@ export class Universe {
     this.sunLight.castShadow=true;this.sunLight.shadow.mapSize.set(512,512);
     this.scene.add(this.sunLight);
     const geo=new THREE.SphereGeometry(1,96,64);
-    this.lowSphere=geo;this.surfaceSphere=new THREE.SphereGeometry(1,1024,512);
+    this.gasSphere=new THREE.SphereGeometry(1,160,96);this.lowSphere=geo;this.surfaceSphere=geo;
     this.black=solidTexture(0,0,0);this.normal=solidTexture(128,128,255);
     this.addBodies(bodies);
     this.createStars();this.createNearbyStars();
@@ -67,7 +70,7 @@ export class Universe {
     for(const b of bodies) {
       if(this.nodes.has(b.id))continue;
       this.bodies.push(b);
-      if(!this.textures.has(b.texture||b.id))this.textures.set(b.id,proceduralTexture(b));
+      if(!this.textures.has(b.texture||b.id)){const c=new THREE.Color(b.color).getRGB({},THREE.SRGBColorSpace);this.textures.set(b.id,solidTexture(c.r*255,c.g*255,c.b*255));}
       const group=new THREE.Group();this.scene.add(group);
       const spin=new THREE.Group();group.add(spin);
       // Axial tilts are visual orientations, not full IAU rotational elements.
@@ -75,7 +78,7 @@ export class Universe {
       const airColor=new THREE.Color(b.id==='mars'?'#d78858':b.id==='venus'||b.id==='titan'?'#eeb972':b.id==='saturn'?'#d4bd8d':b.id==='jupiter'?'#ccb596':b.id==='uranus'?'#8ccad2':'#429bff');
       const hasAir=!!atmosphereFor(b);
       const uniforms={
-        cloudBoundary:{value:1},oceanWorld:{value:b.surfaceType==='ocean'?1:0},
+        gasVariant:{value:b.generated?1:0},gasSeed:{value:seedFor(b.id)%1000},gasTint:{value:new THREE.Color(b.color)},cloudBoundary:{value:1},oceanWorld:{value:b.id==='earth'||b.surfaceType==='ocean'?1:0},
         stellarTint:{value:new THREE.Color(b.id==='sun'?'#ffffff':isStar(b)?b.color:'#ffffff')},stellarBlend:{value:isStar(b)&&b.id!=='sun'?1:0},
         detailCenter:{value:new THREE.Vector3(0,1,0)},detailCut:{value:-1},
         dayMap:{value:this.textures.get(b.texture||b.id)},nightMap:{value:b.id==='earth'?this.textures.get('2k_earth_nightmap.jpg'):black},
@@ -87,12 +90,12 @@ export class Universe {
         ringNormal:{value:new THREE.Vector3(0,1,0)},center:{value:new THREE.Vector3()},
         shadowEnabled:{value:this.settings.shadows?1:0},occluder:{value:new THREE.Vector3()},occluderRadius:{value:0},
       };
-      const shapeLow=b.axes?shapeGeometry(b,96):geo,shapeHigh=b.axes?shapeGeometry(b,256):this.surfaceSphere;
-      const mesh=new THREE.Mesh(shapeLow,material(isStar(b)?sunFragment:surfaceFragment,uniforms));
+      const shapeLow=b.axes?shapeGeometry(b,32):isGasGiant(b)?this.gasSphere:geo,shapeHigh=shapeLow;
+      const mesh=new THREE.Mesh(shapeLow,material(isStar(b)?sunFragment:isGasGiant(b)?gasFragment:surfaceFragment,uniforms));
       mesh.userData.body=b;spin.add(mesh);
       const node={body:b,hostId:isStar(b)?b.id:this.nodes.get(b.parent)?.hostId||'sun',group,spin,mesh,uniforms,shapeLow,shapeHigh,radius:b.radius/KM_PER_UNIT};
       if(hasAir||isStar(b)) {
-        const atmosphere=new THREE.Mesh(geo,material(atmosphereFragment,{
+        const atmosphere=new THREE.Mesh(isGasGiant(b)?this.gasSphere:geo,material(atmosphereFragment,{
           sunDirection:uniforms.sunDirection,atmosphereColor:{value:isStar(b)?new THREE.Color(b.color):airColor},
           strength:{value:isStar(b)?1.2:b.id==='mars'?.45:1.15},
         },{transparent:true,side:THREE.BackSide,blending:THREE.AdditiveBlending,depthWrite:false}));
@@ -121,19 +124,65 @@ export class Universe {
       }
       this.nodes.set(b.id,node);
     }
+    this.starBodies=this.bodies.filter(isStar);this.systemBodies=new Map(this.starBodies.map(star=>[star.id,this.bodies.filter(b=>!isStar(b)&&this.nodes.get(b.id).hostId===star.id)]));
+    this.satellites=new Map(this.bodies.map(b=>[b.id,this.bodies.filter(s=>(s.parent===b.id&&s.kind==='Natural satellite')||(b.kind==='Natural satellite'&&s.id===b.parent))]));
+    this.localBodies=this.systemBodies.get(this.activeSystem||this.referenceSystem)||[];this.initialPositions=false;this.positionsInitialized=false;
     this.lastOrbitJD=undefined;
+  }
+  ensureTexture(body,width=2048){
+    const node=this.nodes.get(body.id);
+    if(isGasGiant(body)){
+      const base=body.texture||'2k_jupiter.jpg',high=base.replace('2k_','8k_');
+      if(!['8k_jupiter.jpg','8k_saturn.jpg'].includes(high)||this.settings.quality==='low'||width<2048)return Promise.resolve();
+      this.textureUsed.set(high,performance.now());
+      if(this.highMaps.has(high)){node.uniforms.dayMap.value=this.highMaps.get(high);return Promise.resolve();}
+      if(this.textureWork.has(high))return this.textureWork.get(high).then(()=>{node.uniforms.dayMap.value=this.highMaps.get(high)||this.textures.get(base);});
+      const task=window.cosmos.texture(high).then(url=>new THREE.TextureLoader().loadAsync(url)).then(t=>{t.colorSpace=THREE.SRGBColorSpace;t.wrapS=THREE.RepeatWrapping;t.anisotropy=8;this.highMaps.set(high,t);node.uniforms.dayMap.value=t;}).catch(e=>{this.streamError=e.message;}).finally(()=>this.textureWork.delete(high));this.textureWork.set(high,task);return task;
+    }
+    if(!body.generated)return Promise.resolve();
+    this.textureUsed.set(body.id,performance.now());
+    if((this.textureLevels.get(body.id)||0)>=width)return Promise.resolve();
+    if(this.textureWork.has(body.id))return this.textureWork.get(body.id).then(()=>this.ensureTexture(body,width));
+    const task=this.jobs.run('texture',{body,width}).then(pixels=>{
+      if(node.hostId!==this.activeSystem&&node.hostId!==this.referenceSystem)return;
+      const texture=textureFromPixels(pixels),previous=this.textures.get(body.id);this.textures.set(body.id,texture);node.uniforms.dayMap.value=texture;
+      previous?.dispose();this.textureLevels.set(body.id,width);this.onTextureReady?.(body);this.landing?.atlas.cache.delete(body.id);
+    }).catch(e=>{this.streamError=e.message;}).finally(()=>this.textureWork.delete(body.id));this.textureWork.set(body.id,task);return task;
+  }
+  pruneTextures(time){
+    if(time<(this.nextPrune||0))return;this.nextPrune=time+2;
+    for(const n of this.nodes.values())if(n.hostId!==this.activeSystem){if(n.terrainGeometry){n.mesh.geometry=n.shapeLow;n.terrainGeometry.dispose();n.terrainGeometry=null;n.terrainResolution=0;}if(n.orbit?.geometry.attributes.position){n.orbit.geometry.dispose();n.orbit.geometry=new THREE.BufferGeometry();}}
+    let memory=[...this.textureLevels.values()].reduce((n,w)=>n+w*w/2*4*1.34,0);
+    for(const [id,width] of [...this.textureLevels].sort((a,b)=>(this.textureUsed.get(a[0])||0)-(this.textureUsed.get(b[0])||0))){
+      const node=this.nodes.get(id),age=performance.now()-(this.textureUsed.get(id)||0);
+      if(node.hostId===this.activeSystem&&(memory<64*1024*1024||age<2000))continue;
+      this.textures.get(id)?.dispose();const c=new THREE.Color(node.body.color).getRGB({},THREE.SRGBColorSpace),placeholder=solidTexture(c.r*255,c.g*255,c.b*255);
+      this.textures.set(id,placeholder);node.uniforms.dayMap.value=placeholder;this.textureLevels.delete(id);this.landing.atlas.cache.delete(id);memory-=width*width/2*4*1.34;
+    }
+    for(const [name,t] of this.highMaps)if(performance.now()-(this.textureUsed.get(name)||0)>20000){for(const n of this.nodes.values())if(n.uniforms.dayMap.value===t)n.uniforms.dayMap.value=this.textures.get(n.body.texture);t.dispose();this.highMaps.delete(name);}
+  }
+  adaptResolution(dt,now){
+    if(dt<=0||dt>.25)return;
+    this.frameEMA=this.frameEMA*.95+dt*1000*.05;
+    if(now<this.nextAdapt||this.drawCount<90||this.settings.adaptive===false)return;
+    let next=this.renderScale;
+    if(this.frameEMA>25)next=Math.max(.5,next-(this.frameEMA>50?.2:.1));
+    else if(this.frameEMA<18&&now>(this.lastScaleDrop||0)+8000)next=Math.min(this.maxScale,next+.05);
+    this.nextAdapt=now+(this.frameEMA>35?650:1200);
+    if(Math.abs(next-this.renderScale)>.01){if(next<this.renderScale)this.lastScaleDrop=now;this.renderScale=next;this.renderer.setPixelRatio(Math.min(devicePixelRatio,next));this.resize();}
   }
   rebase(hostId,flight){
     if(hostId===this.referenceSystem)return;
     const anchor=this.nodes.get(hostId)?.body.anchor||[0,0,0];
     const delta=new THREE.Vector3(...anchor.map((v,i)=>(v-this.referenceAnchor[i])/KM_PER_UNIT));
     if(flight){flight.position.sub(delta);flight.lastTarget.sub(delta);if(flight.warp)flight.warp.start.sub(delta);if(flight.surfaceFrame)flight.surfaceFrame.center.sub(delta);}
+    for(const p of Object.values(this.renderPositions)){p[0]-=delta.x;p[1]-=delta.y;p[2]-=delta.z;}
     this.origin.sub(delta);this.referenceAnchor=[...anchor];this.referenceSystem=hostId;
     this.updatePositions(this.lastJD||J2000);
   }
   closestStar(position){
     let best=null,distance=Infinity;
-    for(const node of this.nodes.values())if(isStar(node.body)){
+    for(const body of this.starBodies){const node=this.nodes.get(body.id);
       const d=position.distanceTo(new THREE.Vector3(...(this.renderPositions[node.body.id]||node.body.anchor?.map(v=>v/KM_PER_UNIT)||[0,0,0])));
       if(d<distance){distance=d;best=node;}
     }
@@ -187,7 +236,8 @@ gl_FragColor=vec4(mix(c,vec3(1.0),.45)*5.0,core+halo);}`});
   }
   setSettings(settings){
     this.settings={...settings};
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio,settings.quality==='high'?1.5:settings.quality==='medium'?1:.75));
+    this.maxScale=settings.quality==='high'?1.35:settings.quality==='medium'?.85:.65;this.renderScale=this.maxScale;
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio,this.renderScale));
     this.renderer.toneMappingExposure=settings.exposure;
     this.bloom.strength=settings.bloom;this.bloom.enabled=settings.bloom>0;
     this.stars.geometry.setDrawRange(0,settings.stars);
@@ -203,8 +253,11 @@ gl_FragColor=vec4(mix(c,vec3(1.0),.45)*5.0,core+halo);}`});
     this.bloom.setSize(w*this.renderer.getPixelRatio()*.65,h*this.renderer.getPixelRatio()*.65);
   }
   updatePositions(jd) {
-    this.lastJD=jd;this.positions=positionsAt(this.bodies,jd,this.referenceAnchor);
-    for(const b of this.bodies){
+    this.lastJD=jd;
+    const focus=new Set([this.referenceSystem,this.activeSystem||this.referenceSystem]);
+    const tracked=[...this.starBodies,...this.bodies.filter(b=>!isStar(b)&&focus.has(this.nodes.get(b.id).hostId))];
+    const computed=positionsAt(this.initialPositions?tracked:this.bodies,jd,this.referenceAnchor);this.initialPositions=true;this.positions={...this.positions,...computed};
+    for(const b of (this.positionsInitialized?tracked:this.bodies)){
       let p=this.positions[b.id].map(v=>v/KM_PER_UNIT);
       if(this.settings.balanced && b.parent && b.parent!=='sun'){
         const parentTrue=this.positions[b.parent],parentRender=this.renderPositions[b.parent];
@@ -214,47 +267,46 @@ gl_FragColor=vec4(mix(c,vec3(1.0),.45)*5.0,core+halo);}`});
       this.renderPositions[b.id]=p;
       this.nodes.get(b.id).mesh.rotation.y=((jd-J2000)/(Math.abs(b.rotation)||1)*Math.PI*2)%(Math.PI*2);
     }
-    if(this.lastOrbitJD===undefined||Math.abs(jd-this.lastOrbitJD)>30){
-      for(const node of this.nodes.values())if(node.orbit){
+    this.positionsInitialized=true;
+    if(this.settings.orbitLines&&(this.lastOrbitJD===undefined||Math.abs(jd-this.lastOrbitJD)>30||this.lastOrbitSystem!==this.referenceSystem)){
+      for(const node of this.nodes.values())if(node.orbit&&focus.has(node.hostId)){
         const points=sampleOrbit(node.body,jd);
         let factor=1/KM_PER_UNIT;
         if(this.settings.balanced&&node.body.parent!=='sun')factor*=this.radius(node.body.parent)/(this.nodes.get(node.body.parent).body.radius/KM_PER_UNIT);
         node.orbit.geometry.dispose();
         node.orbit.geometry=new THREE.BufferGeometry().setFromPoints(points.map(p=>new THREE.Vector3(...p).multiplyScalar(factor)));
       }
-      this.lastOrbitJD=jd;
+      this.lastOrbitJD=jd;this.lastOrbitSystem=this.referenceSystem;
     }
   }
   updateScene(jd,time,origin,flight) {
     this.origin.copy(origin);this.camera.position.set(0,0,0);this.camera.updateMatrixWorld();
-    const primary=this.closestStar(origin);this.activeSystem=primary?.body.id||'sun';
+    const primary=this.closestStar(origin),nextSystem=primary?.body.id||'sun';
+    if(nextSystem!==this.activeSystem){for(const n of this.nodes.values()){n.group.visible=isStar(n.body)||n.hostId===nextSystem;if(n.orbit)n.orbit.visible=false;}this.activeSystem=nextSystem;this.localBodies=this.systemBodies.get(nextSystem)||[];}
+    const activeBodies=[...this.starBodies,...this.localBodies];
     let insideDayAtmosphere=false;
-    for(const node of this.nodes.values()){
-      const b=node.body;
+    for(const b of activeBodies){
+      const node=this.nodes.get(b.id);
       node.group.visible=isStar(b)||node.hostId===this.activeSystem;
-      node.mesh.visible=!isStar(b)||this.radius(b.id)/Math.max(this.radius(b.id),new THREE.Vector3(...this.renderPositions[b.id]).distanceTo(origin))>.00015;
+      node.mesh.visible=this.radius(b.id)/Math.max(this.radius(b.id),new THREE.Vector3(...this.renderPositions[b.id]).distanceTo(origin))>(isStar(b)?.00015:.00008);
       if(node.clouds)node.clouds.visible=true;
       if(node.atmosphere)node.atmosphere.visible=node.mesh.visible;
       node.group.position.fromArray(this.renderPositions[b.id]).sub(origin);
       const radius=this.radius(b.id);node.group.scale.setScalar(radius);node.radius=radius;
       const distance=node.group.position.length();
-      // Generate elevation meshes only for bodies large enough to resolve on screen.
-      // Release them on departure; distant bodies share inexpensive spheres.
+      if(!isStar(b)&&radius/Math.max(radius,distance)>.001)this.ensureTexture(b,distance<radius*12?2048:512);
       if(canLand(b)&&radius/Math.max(radius,distance)>.015){
-        const resolution=distance<radius*1.6?384:128;
-        if(node.terrainResolution!==resolution){
-          node.terrainGeometry?.dispose();
-          const geometry=new THREE.SphereGeometry(1,resolution,resolution/2),p=geometry.attributes.position;
-          for(let i=0;i<p.count;i++){
-            const d=new THREE.Vector3(p.getX(i),p.getY(i),p.getZ(i)).normalize();
-            const sample=this.landing.sample(b,d),scale=shapeFactor(b,d.toArray())+sample.mountain/(b.radius*1000);
-            p.setXYZ(i,d.x*scale,d.y*scale,d.z*scale);
-          }
-          geometry.computeVertexNormals();node.terrainGeometry=geometry;node.terrainResolution=resolution;
+        const resolution=distance<radius*(node.terrainResolution===256?2.1:1.6)?256:96;
+        if(node.terrainResolution!==resolution&&!node.terrainPending){
+          node.terrainPending=true;
+          this.ensureTexture(b,distance<radius*12?2048:512).then(()=>this.jobs.run('globe',{body:b,segments:resolution,atlas:this.landing.atlas.pixels(b)})).then(data=>{
+            if(node.hostId!==this.activeSystem)return;
+            const geometry=this.jobs.geometry(data);node.terrainGeometry?.dispose();node.terrainGeometry=geometry;node.terrainResolution=resolution;
+          }).catch(e=>{this.streamError=e.message;}).finally(()=>node.terrainPending=false);
         }
-        node.mesh.geometry=node.terrainGeometry;
+        node.mesh.geometry=node.terrainGeometry||node.shapeLow;
       }else{
-        node.mesh.geometry=distance<radius*1.15?node.shapeHigh:node.shapeLow;
+        node.mesh.geometry=node.shapeLow;
         if(node.terrainGeometry){node.terrainGeometry.dispose();node.terrainGeometry=null;node.terrainResolution=0;}
       }
       // Cloud tops are a volume boundary, never a solid floor. Fade them before
@@ -271,7 +323,7 @@ gl_FragColor=vec4(mix(c,vec3(1.0),.45)*5.0,core+halo);}`});
         node.group.position.clone().negate().normalize().dot(node.uniforms.sunDirection.value)>0)insideDayAtmosphere=true;
       node.uniforms.ringNormal.value.set(0,1,0).applyQuaternion(node.spin.quaternion);
       if(node.ring)node.ring.material.uniforms.sunLocal.value.copy(node.uniforms.sunDirection.value).applyQuaternion(node.spin.quaternion.clone().invert());
-      const satellites=this.bodies.filter(s=>(s.parent===b.id && s.kind==='Natural satellite') || (b.kind==='Natural satellite' && s.id===b.parent));
+      const satellites=this.satellites.get(b.id)||[];
       let candidate=null,best=Infinity;
       for(const sat of satellites){
         temp.fromArray(this.renderPositions[sat.id]).sub(new THREE.Vector3(...this.renderPositions[b.id]));
@@ -303,7 +355,9 @@ gl_FragColor=vec4(mix(c,vec3(1.0),.45)*5.0,core+halo);}`});
     starPositions.needsUpdate=true;starSizes.needsUpdate=true;
     this.landing.update(flight,time);
     this.airPass.update(origin,time);
-    this.scene.updateMatrixWorld();
+    for(const b of activeBodies){const n=this.nodes.get(b.id);n.group.updateMatrixWorld(true);if(n.orbit?.visible)n.orbit.updateMatrixWorld();}
+    this.landing.root.updateMatrixWorld(true);
+    this.pruneTextures(time);
   }
   render(){
     this.composer.render();
@@ -328,7 +382,7 @@ gl_FragColor=vec4(mix(c,vec3(1.0),.45)*5.0,core+halo);}`});
   }
   getDiagnostics(){
     return {webgl:this.renderer.getContext().getParameter(this.renderer.getContext().VERSION),frames:this.drawCount,
-      shaderError:this.shaderError||null,geometries:this.renderer.info.memory.geometries,textures:this.renderer.info.memory.textures,
+      shaderError:this.shaderError||null,streamError:this.streamError,streamingJobs:this.jobs.pending.size,renderScale:this.renderScale,residentGeneratedTextures:this.textureLevels.size,residentHighMaps:this.highMaps.size,activeBodies:this.localBodies.length,geometries:this.renderer.info.memory.geometries,textures:this.renderer.info.memory.textures,
       logarithmicDepthBuffer:this.renderer.capabilities.logarithmicDepthBuffer,referenceSystem:this.referenceSystem,referenceAnchorKM:[...this.referenceAnchor],bodies:this.nodes.size,nearbyStars:this.starIds.length,activeSystem:this.activeSystem,atmosphere:{...this.airPass.state},texturesRepaired:[...this.textures.entries()].filter(([,t])=>t.userData.repairedPixels).map(([name,t])=>({name,pixels:t.userData.repairedPixels})),irregularBodies:this.bodies.filter(b=>b.axes).map(b=>b.id),landing:this.landing.diagnostics()};
   }
 }

@@ -2,7 +2,7 @@
 
 An offline Mac explorer with the Solar System, nearby stars, procedural planets, free flight and detailed landing environments.
 
-**Download:** [Intel Mac installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.5.0-x64.dmg) · [Apple Silicon installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.5.0-arm64.dmg) · [All releases](https://github.com/gtts-ux/cosmosEngine/releases)
+**Download:** [Intel Mac installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.6.0-x64.dmg) · [Apple Silicon installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.6.0-arm64.dmg) · [All releases](https://github.com/gtts-ux/cosmosEngine/releases)
 
 Open the DMG and drag CosmosEngine-Mac into Applications. Requires macOS 12+ and WebGL 2. The installed app needs no Node.js, browser, server, or internet connection.
 
@@ -15,16 +15,24 @@ The catalog includes **55 nearby stars in addition to the Sun**, including Proxi
 - Choose the **Stars** tab, use search, or select a system from **Browse system**. Inspecting a star changes the sidebar to its system without moving the camera.
 - Click **Go to** or press G to travel. The current-system label follows your physical location; free flight between systems switches the catalog on arrival.
 - Click **＋ Planet** to create a world around the system you are browsing. Choose a name, random/rocky/ocean/ice/gas type and an optional seed. Click Go to after creating it.
-- On an empty extrasolar system, **Seed system** creates four fictional planets. Existing planetary systems are preserved; you can add individual worlds.
+- Every nearby star already has four deterministic fictional planets. Stable moons are added where their orbits fit within the planet’s approximate Hill sphere. No separate system-generation step is needed. Existing custom planets keep their saved recipes and replace only occupied default slots.
 - Generated worlds use deterministic textures, approximate physical properties and Keplerian orbits around their own host star. Solid worlds have automatic local terrain and landing; generated gas giants reject landing.
-- Generated recipes are saved atomically under the app’s user-data directory in `worlds.json` and restored on restart. Up to 16 generated planets per host and 256 total are supported.
+- Custom recipes are saved atomically under the app’s user-data directory in `worlds.json` and restored on restart. Automatic systems are regenerated from stable seeds. The custom save limit is 256 planets; each extrasolar host has 16 total planet slots including its four default slots. Moons do not consume planet slots.
 - **⤢ Star map** opens a neighborhood overview. The large system heading opens that system’s planetary overview.
 
 The star catalog contains primary entries only; binary companions, proper motion and stellar orbital motion are not simulated. Stellar mass/radius/luminosity are spectral estimates. Extrasolar planet discoveries are not bundled: planets created here are labelled **Generated**, are fictional, and are separate from the measured star positions. The catalog snapshot is not a complete or current census of nearby stars. The derived stellar table is licensed under CC BY-SA 4.0; see [DATA-LICENSE.md](DATA-LICENSE.md).
 
-System-local CPU coordinates and a camera-relative GPU origin keep ground movement precise after interstellar travel. Planet illumination follows the host star, and only the nearby system’s planetary geometry/orbits are shown.
+System-local coordinates preserve ground movement after interstellar travel. All systems have lightweight catalog data from startup; nearby systems update their orbits while detailed terrain and maps stream automatically in a worker. Distant detail is released after departure. Planet illumination follows the host star. New systems do not require a manual load action.
 
-Generated maps use 2K albedo with multiscale mineral detail, irregular coastlines, shallow/deep oceans and polar frost. Ocean worlds also have independent cloud layers and water specular highlights. Existing spacecraft/global maps are preserved.
+Generated solid-world maps progressively load up to 2K albedo with mineral variation, coastlines, shallow/deep oceans and polar frost. Ocean worlds also have independent cloud layers and water specular highlights. Existing spacecraft/global maps are preserved.
+
+## Graphics and updates
+
+Balanced graphics starts below native scene resolution while the HUD stays sharp. Adaptive resolution reduces GPU work during slow frames; disable it in Settings to keep the selected graphics resolution. Detailed geometry is built in a worker, replaced atomically, and discarded on departure. Generated map residency is bounded separately from the bundled Solar System imagery.
+
+Jupiter and Saturn have higher-resolution licensed cloud maps (4096 × 2048 pixels, despite the provider’s `8k_` filenames). These load near the planet. Fictional gas giants reuse photo-derived cloud templates with seeded orientation, tint and animated cloud advection; these are visual reconstructions, not photographs of exoplanets. Oceans use filtered waves and horizon reflections.
+
+Click **↥ App updates** in the top bar, then **Check for updates**. The app selects the Intel or Apple Silicon DMG, downloads it and verifies SHA-256 against the release checksums. **Open verified installer** opens the DMG; quit CosmosEngine and drag the new app into Applications to replace it. Saved worlds and settings are kept. Update checks require internet and run only when requested. Silent replacement is not enabled for these ad-hoc builds.
 
 ## Landing environments
 
@@ -35,13 +43,13 @@ Fly toward any planet, moon, asteroid, or dwarf planet: local detail loads autom
 - **All catalog worlds:** detailed patches recenter as you move, and their body-fixed relief repeats at the same coordinates. The globe remains visible beyond the patch. Nearby free flight follows orbital translation and spin, including accelerated simulation time.
 - **Gas and ice giants:** no landing button, surface scene, or keyboard landing. The Sun also rejects landing. Free flight passes through cloud tops and into their opaque atmospheres, with moving cloud haze and deeper darkness; there is no solid floor.
 
-Orbital albedo blends into regional material detail and then close-up normals/roughness as you approach. Large mountain ranges share a continuous body-fixed elevation model across globe meshes, ground tiles and collisions. Fine relief fades in gradually, keeping the same globe image as the color source at every level. Patches extend up to 64 km and recenter during flight.
+Orbital albedo blends into regional material detail and then close-up normals/roughness as you approach. Large mountain ranges share a continuous body-fixed elevation model across globe meshes, ground tiles and collisions. Fine relief fades in gradually. Photographed rock, sand, grass and ice materials use body-fixed triplanar projection, with normal and roughness detail and colors derived from the global map. This reduces stretching and repeated tile patterns while retaining the body’s palette. Patches extend up to 64 km and recenter during flight.
 
 Regional colors and Earth material selection follow available global imagery, whose resolution limits coastlines and biome accuracy. Mountains, small relief/craters and fine material detail are reconstructed, not surveyed elevation, satellite land-cover data, buildings, or photogrammetry. Worlds without spacecraft maps still use illustrative global maps. The camera stays above the rendered terrain; ocean views remain above water.
 
 ## Catalog
 
-105 fixed catalog objects: the Sun, 55 additional stars, eight Solar System planets, five recognized dwarf planets, three other major asteroids, and 33 moons. Saved generated worlds appear in their own host systems.
+A clean profile contains 560 objects: 105 fixed catalog entries plus 220 fictional extrasolar planets and 235 fictional moons. The fixed entries include the Sun, 55 nearby stars, eight Solar System planets, five dwarf planets, three asteroids and 33 moons. Saved custom worlds and their moons appear in their own host systems.
 
 - Earth: Moon.
 - Mars: Phobos, Deimos.
@@ -95,6 +103,9 @@ npm test                 # Orbital, clock, settings, and terrain tests
 npm run test:app         # Real Electron rendering and interaction checks
 npm run test:systems     # Generation, interstellar travel and persistence checks
 npm run test:visual      # Rendered star pixels, mountains and giant entry/exit
+npm run test:streaming   # Automatic systems, moons, detail streaming and persistence
+npm run test:updates     # Update UI with isolated download/checksum fixture
+npm run test:performance # Measured frame timings and CPU profiles
 npm run pack             # Intel .app
 npm run dist             # Intel and Apple Silicon DMGs, sequentially
 npm run dist:intel

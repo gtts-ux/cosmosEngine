@@ -52,7 +52,7 @@ export class AtmosphericPass extends ShaderPass {
   update(origin,time){
     const u=this.uniforms,U=this.universe;u.optical.value=0;this.state={body:null,transmission:1,altitude:null};
     let closest=Infinity;
-    for(const body of U.bodies){
+    for(const body of U.localBodies||U.bodies){
       const p=atmosphereFor(body);if(!p)continue;
       const R=U.radius(body.id),factor=R/(body.radius*1000),center=new THREE.Vector3(...U.renderPositions[body.id]).sub(origin);
       const altitude=(center.length()-R)/factor;

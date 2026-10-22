@@ -1,5 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('cosmos', Object.freeze({
+  updates:{status:()=>ipcRenderer.invoke('updates:status'),check:()=>ipcRenderer.invoke('updates:check'),download:()=>ipcRenderer.invoke('updates:download'),install:()=>ipcRenderer.invoke('updates:install')},
   settings: {
     load: () => ipcRenderer.invoke('settings:load'),
     save: (settings) => ipcRenderer.invoke('settings:save', settings),

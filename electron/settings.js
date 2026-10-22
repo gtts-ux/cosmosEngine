@@ -1,11 +1,11 @@
 export const defaults = Object.freeze({
-  quality: 'medium', bloom: 0.45, stars: 6000, orbitLines: false,
+  adaptive:true, quality: 'medium', bloom: 0.45, stars: 6000, orbitLines: false,
   labels: true, shadows: true, balanced: false, exposure: 1.1,
 });
 export function sanitizeSettings(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return { ...defaults };
   const result = { ...defaults };
-  for (const key of ['orbitLines', 'labels', 'shadows', 'balanced']) {
+  for (const key of ['orbitLines', 'labels', 'shadows', 'balanced','adaptive']) {
     if (typeof input[key] === 'boolean') result[key] = input[key];
   }
   if (['low', 'medium', 'high'].includes(input.quality)) result.quality = input.quality;

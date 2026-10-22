@@ -1,10 +1,12 @@
-import { app, BrowserWindow, ipcMain, Menu, net, protocol, session } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, net, protocol, session, shell } from 'electron';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { BODIES, TEXTURES } from '../src/data/catalog.js';
 import {randomBytes} from 'node:crypto';
-import {isStar,generatePlanet,sanitizeWorlds,restorePlanets,GENERATION_TYPES,MAX_GENERATED,MAX_PER_SYSTEM} from '../src/data/systems.js';
+import {isStar,generatePlanet,sanitizeWorlds,GENERATION_TYPES,MAX_GENERATED,MAX_PER_SYSTEM} from '../src/data/systems.js';
+import {populateWorlds,generateMoons} from '../src/data/world-population.js';
+import {UpdateManager} from './updates.js';
 import { defaults, sanitizeSettings } from './settings.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -31,6 +33,13 @@ function handle(channel, handler) {
 }
 let saveQueue = Promise.resolve();
 async function setupIPC() {
+  let fixture=null;
+  if(process.env.COSMOS_TEST_PROFILE&&process.env.COSMOS_UPDATE_FIXTURE)fixture=JSON.parse(await readFile(process.env.COSMOS_UPDATE_FIXTURE,'utf8'));
+  const updater=new UpdateManager({version:app.getVersion(),arch:process.arch,directory:path.join(app.getPath('userData'),'updates'),fetcher:fixture?async url=>{
+    if(fixture.offline)throw new Error('No internet connection');
+    return new Response(url.endsWith('/latest')?JSON.stringify(fixture.release):url.endsWith('SHA256SUMS.txt')?fixture.checksums:Buffer.from(fixture.payload,'base64'));
+  }:(...args)=>net.fetch(...args),openInstaller:fixture?async()=> '':file=>shell.openPath(file)});
+  handle('updates:status',()=>updater.snapshot());handle('updates:check',()=>updater.check());handle('updates:download',()=>updater.download());handle('updates:install',()=>updater.install());
   const settingsFile = path.join(app.getPath('userData'), 'settings.json');
   handle('settings:load', async () => {
     try { return sanitizeSettings(JSON.parse(await readFile(settingsFile, 'utf8'))); }
@@ -49,7 +58,7 @@ async function setupIPC() {
   handle('celestial:catalog', () => BODIES);
   const worldsFile=path.join(app.getPath('userData'),'worlds.json');let worldQueue=Promise.resolve();
   const loadWorlds=async()=>{try{return sanitizeWorlds(JSON.parse(await readFile(worldsFile,'utf8')),BODIES);}catch(error){if(error.code==='ENOENT'||error instanceof SyntaxError)return {version:1,planets:[]};throw error;}};
-  handle('worlds:load',async()=>{await worldQueue.catch(()=>{});const state=await loadWorlds();return {state,bodies:restorePlanets(state,BODIES)};});
+  handle('worlds:load',async()=>{await worldQueue.catch(()=>{});const state=await loadWorlds();return {state,bodies:populateWorlds(BODIES,state.planets)};});
   handle('worlds:generate',input=>{
     if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('Invalid generation request');
     const host=BODIES.find(b=>b.id===input.hostId&&isStar(b));
@@ -59,12 +68,12 @@ async function setupIPC() {
     const seed=typeof input.seed==='string'&&/^[a-zA-Z0-9-]{1,48}$/.test(input.seed)?input.seed:randomBytes(8).toString('hex');
     const task=worldQueue.catch(()=>{}).then(async()=>{
       const state=await loadWorlds(),existing=state.planets.filter(p=>p.hostId===host.id);
-      const next=existing.length?Math.max(...existing.map(d=>d.index))+1:0;
+      const next=Math.max(host.id==='sun'?0:4,existing.length?Math.max(...existing.map(d=>d.index))+1:0);
       if(next+count>MAX_PER_SYSTEM||state.planets.length+count>MAX_GENERATED)throw new Error('Planet limit reached for this system or universe');
       const added=Array.from({length:count},(_,i)=>({hostId:host.id,index:next+i,seed,type,name:count===1?name:''}));
       state.planets.push(...added);
       await mkdir(path.dirname(worldsFile),{recursive:true});await writeFile(worldsFile+'.tmp',JSON.stringify(state,null,2),{mode:0o600});await rename(worldsFile+'.tmp',worldsFile);
-      return {state,bodies:added.map(d=>generatePlanet(host,d))};
+      return {state,bodies:added.flatMap(d=>{const planet=generatePlanet(host,d);return [planet,...generateMoons(planet,host)];})};
     });worldQueue=task.then(()=>{},()=>{});return task;
   });
   handle('texture:resolve', (name) => {

@@ -9,11 +9,17 @@ export class SurfaceAtlas {
   pixels(body){
     if(this.cache.has(body.id))return this.cache.get(body.id);
     const image=this.universe.textures.get(body.texture||body.id).image;
+    if(image.data)return {data:image.data,width:image.width,height:image.height};
     const canvas=document.createElement('canvas');canvas.width=Math.min(4096,image.width);canvas.height=Math.round(canvas.width*image.height/image.width);
     const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0,canvas.width,canvas.height);
     const atlas={data:ctx.getImageData(0,0,canvas.width,canvas.height).data,width:canvas.width,height:canvas.height};
     if(this.cache.size>=2)this.cache.delete(this.cache.keys().next().value);
     this.cache.set(body.id,atlas);return atlas;
+  }
+  macro(body,direction){
+    const c=surfaceCoordinates(direction.toArray()),a=this.pixels(body),i=(Math.min(a.height-1,Math.floor(c.v*a.height))*a.width+Math.min(a.width-1,Math.floor(c.u*a.width)))*4;
+    const biome=body.id==='earth'||body.surfaceType==='ocean'?earthBiome([a.data[i],a.data[i+1],a.data[i+2]]):null;
+    return mountainHeight(body,direction.toArray(),biome);
   }
   sample(body,direction){
     const coords=surfaceCoordinates(direction.toArray()),a=this.pixels(body);

@@ -169,7 +169,7 @@ export class Flight {
   get boost(){return this.keys.has('ShiftLeft')||this.keys.has('ShiftRight');}
   collide(previous){
     const movement=this.position.clone().sub(previous),length2=movement.lengthSq();
-    for(const b of this.universe.bodies){
+    for(const b of this.universe.localBodies||this.universe.bodies){
       if(isGasGiant(b))continue;
       const center=new THREE.Vector3(...this.universe.renderPositions[b.id]),base=this.universe.radius(b.id),factor=base/(b.radius*1000);
       let radius=base+5*factor;

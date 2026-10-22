@@ -65,6 +65,9 @@ export const surfaceFragment = /* glsl */`
     float spec=pow(max(dot(reflect(-L,n),V),0.0),75.0);
     float ocean=oceanWorld>.5?step(day.r*1.8,day.b)*step(day.g*1.05,day.b):texture2D(specMap,vUv).r;
     color+=vec3(1.0,.94,.84)*spec*ocean*hasSpecular*light*.8*shadow;
+    float seaFresnel=.035+.965*pow(1.0-max(dot(n,V),0.0),5.0);
+    vec3 seaSky=mix(vec3(.13,.29,.48),vec3(.62,.78,.85),pow(1.0-abs(dot(reflect(-V,n),geometric)),2.0));
+    color=mix(color,seaSky*(.04+light*.9),ocean*hasSpecular*seaFresnel*.8);
     float rim=pow(1.0-max(dot(geometric,V),0.0),3.5);
     color+=atmosphereColor*rim*pow(max(dot(geometric,L)+.2,0.0),.7)*hasAtmosphere*.5;
     gl_FragColor=vec4(color,1.0);
@@ -185,3 +188,19 @@ export const ringFragment = /* glsl */`
     #include <colorspace_fragment>
   }
 `;
+
+// High-frequency structure comes from licensed planetary imagery; seeded advection
+// varies fictional giants without reducing their clouds to flat noise bands.
+export const gasFragment=surfaceFragment.replace('uniform vec3 sunDirection,','uniform float gasSeed,time,gasVariant;uniform vec3 gasTint;\n  uniform vec3 sunDirection,').replace('void main() {',simplex+'\nvoid main() {').replace('0.012+light*1.65*shadow','0.018+light*1.1*shadow').replace('vec3 day=texture2D(dayMap,vUv).rgb;',`
+    vec3 p=normalize(vLocal);vec2 cloudUV=vUv;
+    if(gasVariant>.5){
+      float curl=snoise(p*19.0+vec3(gasSeed*.013+time*.006));
+      float eddies=sin(p.y*53.0+p.z*31.0+curl*3.0+time*.008);
+      vec2 sourceUV=vec2(vUv.x+gasSeed*.618033,mix(vUv.y,1.0-vUv.y,step(500.0,gasSeed)));
+      // Let the sampler wrap longitude; fract here introduces a false mip seam.
+      cloudUV=vec2(sourceUV.x+sin(p.y*12.0)*time*.00006+curl*.003,clamp(sourceUV.y+curl*.0018+eddies*.0007,.001,.999));
+    }else cloudUV.x+=sin(p.y*12.0)*time*.00001;
+    vec3 day=texture2D(dayMap,cloudUV).rgb;
+    vec3 tint=gasTint/max(dot(gasTint,vec3(.299,.587,.114)),.05);
+    day*=mix(vec3(1.0),tint,gasVariant*.12);
+`);

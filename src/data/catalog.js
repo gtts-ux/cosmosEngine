@@ -128,6 +128,6 @@ BODIES.push(...NEARBY_STARS);
 export const TEXTURES = [
   ...BODIES.map(b=>b.texture).filter(Boolean),
   '2k_earth_nightmap.jpg','2k_earth_clouds.jpg','earth-normal.png',
-  'earth-specular.png','2k_stars_milky_way.jpg',...GROUND_TEXTURES,
+  'earth-specular.png','2k_stars_milky_way.jpg','8k_jupiter.jpg','8k_saturn.jpg',...GROUND_TEXTURES,
 ];
 export const BY_ID = Object.fromEntries(BODIES.map(body=>[body.id,body]));

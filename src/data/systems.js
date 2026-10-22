@@ -39,6 +39,7 @@ export function generatePlanet(host,descriptor){
     atmosphere:surfaceType==='gas'?'Hydrogen · Helium (generated)':surfaceType==='ocean'?'Nitrogen · Water vapor (generated)':surfaceType==='ice'?'Thin volatile atmosphere (generated)':'Thin dust atmosphere (generated)',
     atmospherePreset:surfaceType==='gas'?'neptune':surfaceType==='ocean'?'earth':surfaceType==='rocky'?'mars':null,
     orbit:[a*149597870.7,.005+random()*.08,random()*7,random()*360,random()*360,random()*360],
+    ...(surfaceType==='gas'?{texture:seedFor(id)%3===0?'2k_saturn.jpg':'2k_jupiter.jpg'}:{}),
     procedural:surfaceType==='ice'?'ice':'rock',
     description:`A fictional, procedurally generated ${surfaceType} world around ${host.name}. Its orbit follows a Keplerian model; surface features are reconstructed.`,
   };

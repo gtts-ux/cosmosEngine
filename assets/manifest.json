@@ -315,5 +315,19 @@
     "sha256": "b6dea8039ac2a5beaed6fd41834fb55540cc76b492edd1d48ba2da2f30f1cb75",
     "outputSha256": "b6dea8039ac2a5beaed6fd41834fb55540cc76b492edd1d48ba2da2f30f1cb75",
     "credit": "Poly Haven / CC0"
+  },
+  {
+    "file": "8k_jupiter.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/8k_jupiter.jpg",
+    "sha256": "0bd844bf20822c4e3e80882b077859833c0dac44c7e4e1e0cd63d1b1b6d43085",
+    "outputSha256": "0bd844bf20822c4e3e80882b077859833c0dac44c7e4e1e0cd63d1b1b6d43085",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0; supplied image measures 4096 x 2048"
+  },
+  {
+    "file": "8k_saturn.jpg",
+    "url": "https://www.solarsystemscope.com/textures/download/8k_saturn.jpg",
+    "sha256": "0d39a4a490c87c3edabe00a3881a29bb3418364178c79c534fe0986e97e09853",
+    "outputSha256": "0d39a4a490c87c3edabe00a3881a29bb3418364178c79c534fe0986e97e09853",
+    "credit": "Solar System Scope / INOVE / CC BY 4.0; supplied image measures 4096 x 2048"
   }
 ]

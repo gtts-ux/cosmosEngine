@@ -24,7 +24,7 @@
       <button data-window="maximize" class="maximize" aria-label="Toggle full screen"></button>
     </div>
     <span class="title-name">CosmosEngine <span class="muted">— Solar System</span></span>
-    <span class="title-version">MAC / 1.5</span>
+    <span class="title-version">MAC / 1.6</span>
   </header>
   <div id="hud">
     <nav class="topbar flex items-center justify-between">
@@ -43,14 +43,14 @@
       <div class="flex items-center gap-2 toolbar-actions">
         <span class="live"><i></i> LOCAL SIMULATION</span>
         <button id="help-button" class="icon-button" title="Flight manual" aria-label="Flight manual">?</button>
-        <button id="settings-button" class="icon-button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg></button>
+        <button id="update-button" class="icon-button" title="App updates" aria-label="App updates">↥</button><button id="settings-button" class="icon-button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg></button>
       </div>
     </nav>
     <aside class="explorer panel">
       <div class="panel-heading flex justify-between items-center"><span class="eyebrow">EXPLORER</span><span class="count">20 OBJECTS</span></div>
       <button id="overview" class="system-button flex items-center gap-3"><span class="system-icon">◎</span><span><strong id="system-name">Solar System</strong><small id="system-status">Current system</small></span><span class="arrow">↗</span></button>
       <div class="system-picker"><label for="system-select">BROWSE SYSTEM</label><select id="system-select" aria-label="Browse star system"></select></div>
-      <div class="system-actions"><button id="generate-planet">＋ Planet</button><button id="generate-system">Seed system</button><button id="neighborhood-view" title="View the local stellar neighborhood">⤢ Star map</button></div>
+      <div class="system-actions"><button id="generate-planet">＋ Planet</button><button id="generate-system" hidden>Seed system</button><button id="neighborhood-view" title="View the local stellar neighborhood">⤢ Star map</button></div>
       <div class="explorer-tabs flex" role="tablist" aria-label="Object type">
         <button class="active" role="tab" aria-selected="true" data-filter="planets">Planets</button>
         <button role="tab" aria-selected="false" data-filter="moons">Moons</button>
@@ -138,8 +138,16 @@
     <label class="setting-row"><span>Shadows<small>Planet, moon, and ring occlusion</small></span><input id="shadows" type="checkbox"></label>
     <label class="setting-row"><span>Orbit paths</span><input id="orbit-lines" type="checkbox"></label>
     <label class="setting-row"><span>Object labels</span><input id="setting-labels" type="checkbox"></label>
+    <label class="setting-row"><span>Adaptive resolution<small>Keep flight smooth when the GPU is busy</small></span><input id="adaptive" type="checkbox"></label>
     <p class="modal-note">Settings are saved automatically on this Mac.</p>
     <div class="credits">Planet maps: Solar System Scope / INOVE · CC BY 4.0<br>Orbital elements: NASA / JPL Solar System Dynamics<br>Procedural satellite surfaces are illustrative.</div>
+  </dialog>
+  <dialog id="update-dialog" class="panel modal">
+    <div class="flex justify-between items-center"><div><span class="eyebrow">COSMOSENGINE</span><h2>App updates</h2></div><button class="dialog-close icon-button" aria-label="Close updates">×</button></div>
+    <p id="update-status" role="status">Check GitHub for a newer version.</p>
+    <progress id="update-progress" max="1" value="0" hidden style="width:100%"></progress>
+    <p class="modal-note">Downloads use the installer for your Mac and are checked against the release checksum. Saved worlds and settings are kept.</p>
+    <button id="update-action" class="primary-button">Check for updates</button>
   </dialog>
   <dialog id="help-dialog" class="panel modal">
     <div class="flex justify-between items-center"><div><span class="eyebrow">FLIGHT MANUAL</span><h2>Make space your own.</h2></div><button class="dialog-close icon-button" aria-label="Close help">×</button></div>

@@ -13,3 +13,7 @@ build/icon.png
 .systems-test-profile/
 
 .visual-test-profile/
+
+.performance-profile/
+.streaming-profile/
+.updates-profile/

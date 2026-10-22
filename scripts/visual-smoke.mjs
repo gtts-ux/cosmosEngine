@@ -17,6 +17,12 @@ try{
  const stars=await page.evaluate(()=>window.__cosmos.starProbe());
  assert.ok(stars.filter(s=>s.id!=='sun'&&s.brightness>40).length>=25,JSON.stringify(stars));
  await page.screenshot({path:'test-output/visible-nearby-stars.png'});checks.push('At least 25 nearby stars produce measurable bright pixels in the star map');
+ for(const id of ['jupiter','saturn']){
+  await page.evaluate(id=>window.__cosmos.gasFlight(id,5),id);
+  await page.waitForFunction(id=>window.__cosmos.bodyProbe(id).textureWidth===4096,id,{timeout:20000});
+  await page.screenshot({path:`test-output/photo-clouds-${id}.png`});
+ }
+ checks.push('Jupiter and Saturn stream their 4096-pixel photo-derived cloud maps near the camera');
  for(const id of ['jupiter','saturn','uranus','neptune']){
   await page.evaluate(id=>window.__cosmos.gasFlight(id),id);
   await page.keyboard.down('w');
@@ -36,8 +42,9 @@ try{
  await page.waitForTimeout(1000);
  const mountainPixels=await page.evaluate(()=>window.__cosmos.frameProbe());
  assert.ok(mountainPixels.some(p=>Math.max(...p.slice(0,3))>25),JSON.stringify(mountainPixels));
+ await page.waitForFunction(()=>window.__cosmos.bodyProbe('moon').resolution===256,{},{timeout:20000});
  const moon=await page.evaluate(()=>window.__cosmos.bodyProbe('moon'));
- assert.ok(moon.rangeMeters>500,JSON.stringify(moon));assert.equal(moon.resolution,384);assert.ok(moon.groundVertices>=66049);
+ assert.ok(moon.rangeMeters>500,JSON.stringify(moon));assert.equal(moon.resolution,256);assert.ok(moon.groundVertices>=16641);
  await page.screenshot({path:'test-output/lunar-mountains.png'});checks.push('Lunar elevation mesh has mountains over 500 m and a detailed ground patch');
  await page.locator('#generate-planet').click();await page.locator('#generated-type').selectOption('ocean');await page.locator('#generated-name').fill('Visual Ocean');await page.locator('#generated-seed').fill('visual-v15');await page.locator('#generate-submit').click();
  await page.waitForFunction(()=>window.__cosmos.diagnostics().generated.some(b=>b.name==='Visual Ocean'),{},{timeout:30000});

@@ -13,6 +13,11 @@ the maps as based on NASA imagery and elevation data, with enhanced colors and
 some reconstructed regions. Satellite and asteroid procedural maps in this app
 are illustrative and are not spacecraft image maps.
 
+Higher-resolution Jupiter/Saturn downloads supplied under `8k_` filenames measure
+4096 × 2048 pixels. They are loaded near the corresponding bodies. Fictional gas
+giants reuse these licensed photographic templates with shader-based orientation,
+color and cloud motion changes. These reconstructions are not exoplanet imagery.
+
 ## Orbital model
 
 NASA / JPL Solar System Dynamics:
