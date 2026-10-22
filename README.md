@@ -2,7 +2,7 @@
 
 An offline Mac solar-system explorer with free flight and detailed landing environments.
 
-**Download:** [Intel Mac installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.2.0-x64.dmg) · [Apple Silicon installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.2.0-arm64.dmg) · [All releases](https://github.com/gtts-ux/cosmosEngine/releases)
+**Download:** [Intel Mac installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.3.0-x64.dmg) · [Apple Silicon installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.3.0-arm64.dmg) · [All releases](https://github.com/gtts-ux/cosmosEngine/releases)
 
 Open the DMG and drag CosmosEngine-Mac into Applications. Requires macOS 12+ and WebGL 2. The installed app needs no Node.js, browser, server, or internet connection.
 
@@ -15,29 +15,33 @@ Fly toward any planet, moon, asteroid, or dwarf planet: local detail loads autom
 - **Earth:** ocean, vegetation, desert/sand, exposed rock, and snow/ice are classified from the installed global albedo map at your actual latitude/longitude. Coastlines follow that map. Manual random biome presets have been removed.
 - **Other solid worlds:** color follows each world's global map, with regolith, iron-rich dust, sulfur, frost, or ice detail appropriate to that body. Lunar rock detail is neutral gray; the photographed rocky material's moss colors are removed.
 - **All catalog worlds:** detailed patches recenter as you move, and their body-fixed relief repeats at the same coordinates. The globe remains visible beyond the patch. Nearby free flight follows orbital translation and spin, including accelerated simulation time.
-- **Gas giants:** cloud-top views; there is no solid surface.
+- **Gas and ice giants:** no landing button, surface scene, or keyboard landing. The Sun also rejects landing. Free flight can approach their opaque atmospheres.
+
+Orbital albedo blends into regional material detail and then close-up normals/roughness as you approach. Relief also fades in gradually, keeping the same globe image as the color source at every level.
 
 Regional colors and Earth material selection follow available global imagery, whose resolution limits coastlines and biome accuracy. Small relief/craters and fine material detail are reconstructed, not surveyed elevation, satellite land-cover data, buildings, or photogrammetry. Worlds without spacecraft maps still use illustrative global maps. The camera stays above the rendered terrain; ocean views remain above water.
 
 ## Catalog
 
-38 objects: the Sun, eight planets, five recognized dwarf planets, three other major asteroids, and 21 moons.
+50 objects: the Sun, eight planets, five recognized dwarf planets, three other major asteroids, and 33 moons.
 
 - Earth: Moon.
 - Mars: Phobos, Deimos.
-- Jupiter: Io, Europa, Ganymede, Callisto.
-- Saturn: Mimas, Enceladus, Tethys, Dione, Rhea, Titan, Iapetus.
+- Jupiter: Io, Europa, Ganymede, Callisto, Metis, Adrastea, Amalthea, Thebe.
+- Saturn: Mimas, Enceladus, Tethys, Dione, Rhea, Titan, Iapetus, Hyperion, Pan, Daphnis, Atlas, Prometheus, Pandora, Epimetheus, Janus.
 - Uranus: Miranda, Ariel, Umbriel, Titania, Oberon.
 - Neptune: Triton.
 - Pluto: Charon.
 
-Seventeen moon/small-body globes use USGS spacecraft-derived mosaics. Pluto uses NASA’s New Horizons map. Worlds without suitable global imagery use illustrative maps. This is a catalog of major moons, not every known small satellite.
+Seventeen moon/small-body globes use USGS spacecraft-derived mosaics. Edge-connected white no-data regions in incomplete mosaics are filled with documented procedural terrain; measured regions remain intact. Generated atlases use continuous spherical noise/craters and correct color encoding, replacing the old repeating bands. Global maps wrap at the longitude seam. Pluto uses NASA’s New Horizons map. Worlds without suitable global imagery use illustrative maps. This is a catalog of major moons, not every known small satellite.
 
 ## Controls
 
 | Action | Control |
 | --- | --- |
-| Select and travel to a world | Explorer, scene click, or search |
+| Inspect a world without moving | Explorer, scene click, label, or search |
+| Travel to the inspected world | Go to button or G |
+| Aim and track from your current position | Lock orbit |
 | Search | ⌘K |
 | Orbit / zoom | Drag / scroll |
 | Enter free flight / return to orbit | F / O |
@@ -47,8 +51,8 @@ Seventeen moon/small-body globes use USGS spacecraft-derived mosaics. Pluto uses
 | Flight speed | Scroll in flight or logarithmic speed slider |
 | Boost | Shift |
 | Telescope magnification (0.5×–1000×) | Hold Shift and scroll; click telescope indicator to reset to 1× |
-| Warp to selected target | G |
-| Enter landing / cloud-top view | L |
+| Go to selected target | G |
+| Land on a selected solid world | L |
 | Pause / reset to current time | Space / R |
 | Hide or restore interface | H |
 
@@ -87,7 +91,7 @@ Electron 44.9.2, Three.js/WebGL 2, modular JavaScript, locally compiled Tailwind
 
 Planet positions use [JPL approximate elements and rates](https://ssd.jpl.nasa.gov/planets/approx_pos.html) and a Newton solution of Kepler’s equation. The Earth-Moon barycenter is split by mass ratio. The clock stops at the 1800–2050 model boundary. UTC is used as an approximation to ephemeris time. Light-time, TT/TDB, relativistic, and observer corrections are not applied. Moon, dwarf-planet, and asteroid orbits use simplified mean elements; phases are not precision predictions.
 
-Global rendering includes animated simplex-noise solar shading, Earth’s separate night/cloud layers and ocean specular map, thin-shell Rayleigh/Mie approximations, ring banding, analytic ring and moon shadows, a Milky Way background, and bloom. Atmospheres are visual approximations rather than integrated multiple scattering. Landing terrain uses local metric geometry, curvature, deterministic relief/craters, photographed material maps, and globe-coordinate material selection. Global orientations use approximate tilts/spin, not full IAU pole models.
+Global rendering includes animated simplex-noise solar shading with dark umbra/penumbra sunspots, Earth’s separate night/cloud layers and ocean specular map, thin-shell Rayleigh/Mie approximations, ring banding, analytic ring and moon shadows, a Milky Way background, and bloom. A depth-aware atmospheric pass integrates extinction along view rays, colors the sky and distant terrain, and adds subtle optical shimmer. Dense Venus/Titan and giant-planet air obscures planets, stars, rings, and bloom; nearby ground remains visible. These are optical presets and approximate scattering, not full multiple scattering or measured refraction. Landing terrain uses local metric geometry, curvature, deterministic relief/craters, photographed material maps, and globe-coordinate material selection. Global orientations use approximate tilts/spin, not full IAU pole models. Small moons, several asteroids and Haumea use approximate ellipsoids with uneven detail; Pan and Atlas have equatorial ridges. Navigation, collision and detailed terrain share the same shape field. Small moons keep their physical mean radii and receive a wider arrival view.
 
 The sandboxed renderer has no Node.js integration. Context-isolated IPC validates senders and texture names; settings use schema-filtered, atomic writes. External navigation is blocked and all runtime resources use a restricted local protocol. Settings live under Electron’s user-data directory.
 

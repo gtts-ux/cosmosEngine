@@ -24,7 +24,7 @@
       <button data-window="maximize" class="maximize" aria-label="Toggle full screen"></button>
     </div>
     <span class="title-name">CosmosEngine <span class="muted">— Solar System</span></span>
-    <span class="title-version">MAC / 1.2</span>
+    <span class="title-version">MAC / 1.3</span>
   </header>
   <div id="hud">
     <nav class="topbar flex items-center justify-between">
@@ -71,7 +71,7 @@
         <div class="metric"><span>ORBITAL PERIOD</span><strong id="target-period"></strong></div>
       </div>
       <div class="atmosphere-info"><span class="eyebrow">ATMOSPHERE</span><p id="target-atmosphere"></p></div>
-      <button id="warp" class="primary-button"><span>↗</span> Warp to target <kbd>G</kbd></button>
+      <button id="warp" class="primary-button"><span>↗</span> Go to <kbd>G</kbd></button>
       <div class="flex gap-2 target-actions"><button id="orbit">◎ Lock orbit</button><button id="land">↓ Land</button></div>
       <div id="target-note" class="target-note">Approximate ephemeris · J2000 frame</div>
     </aside>
@@ -139,7 +139,7 @@
     <div class="help-row"><span>Free flight / orbit / surface</span><span><kbd>F</kbd> <kbd>O</kbd> <kbd>L</kbd></span></div>
     <div class="help-row"><span>Warp / find / pause</span><span><kbd>G</kbd> <kbd>⌘ K</kbd> <kbd>Space</kbd></span></div>
     <div class="help-row"><span>Hide interface / reset time</span><span><kbd>H</kbd> <kbd>R</kbd></span></div>
-    <p class="modal-note">Fly close to any world to reveal detailed terrain automatically. Materials follow the globe map at your latitude and longitude. Land descends beneath your current position; WASD moves and drag looks around. Shift + scroll adjusts the telescope from 0.5× to 1000×; click its indicator to reset. O returns to orbit. Gas giants offer cloud tops.</p>
+    <p class="modal-note">Fly close to any world to reveal detailed terrain automatically. Materials follow the globe map at your latitude and longitude. Land descends beneath your current position; WASD moves and drag looks around. Shift + scroll adjusts the telescope from 0.5× to 1000×; click its indicator to reset. O returns to orbit. Gas and ice giants have no landable surface.</p>
     <p class="modal-note">Planet orbits use approximate JPL elements for 1800–2050. Moon and asteroid trajectories use simplified mean elements; satellite phases and surface orientations are illustrative. This is an exploration simulator, not a precision ephemeris.</p>
   </dialog>
   <script type="module" src="app.js"></script>

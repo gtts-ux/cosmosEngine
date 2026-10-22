@@ -6,12 +6,19 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { AU, J2000, positionsAt, sampleOrbit } from '../physics/orbits.js';
 import { sphereVertex, surfaceFragment, atmosphereFragment, cloudFragment, sunFragment, ringFragment } from './shaders.js';
 import { solidTexture } from './textures.js';
+import { AtmosphericPass } from './atmosphere.js';
+import { shapeFactor } from '../data/shapes.js';
 import { LandingTerrain } from './landing.js';
 
 export const KM_PER_UNIT=1000;
 const temp=new THREE.Vector3();
 function material(fragment,uniforms,extra={}) {
   return new THREE.ShaderMaterial({vertexShader:sphereVertex,fragmentShader:fragment,uniforms,...extra});
+}
+function shapeGeometry(body,segments){
+  const geo=new THREE.SphereGeometry(1,segments,Math.floor(segments/2)),pos=geo.attributes.position;
+  for(let i=0;i<pos.count;i++){const d=[pos.getX(i),pos.getY(i),pos.getZ(i)],f=shapeFactor(body,d);pos.setXYZ(i,d[0]*f,d[1]*f,d[2]*f);}
+  geo.computeVertexNormals();return geo;
 }
 function seeded(seed) { return ()=>{ seed=(Math.imul(seed,1664525)+1013904223)|0;return (seed>>>0)/4294967296; }; }
 export class Universe {
@@ -31,7 +38,11 @@ export class Universe {
     this.composer=new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene,this.camera));
     this.bloom=new UnrealBloomPass(new THREE.Vector2(1,1),settings.bloom,.6,1);
-    this.composer.addPass(this.bloom);this.composer.addPass(new OutputPass());
+    this.composer.addPass(this.bloom);
+    for(const target of [this.composer.renderTarget1,this.composer.renderTarget2]){
+      target.depthTexture=new THREE.DepthTexture(1,1,THREE.UnsignedIntType);target.depthTexture.minFilter=target.depthTexture.magFilter=THREE.NearestFilter;
+    }
+    this.airPass=new AtmosphericPass(this);this.composer.addPass(this.airPass);this.composer.addPass(new OutputPass());
     const sky=textures.get('2k_stars_milky_way.jpg');
     sky.mapping=THREE.EquirectangularReflectionMapping;
     // Three.js converts the equirectangular panorama to a cubemap for the sky.
@@ -61,13 +72,14 @@ export class Universe {
         ringNormal:{value:new THREE.Vector3(0,1,0)},center:{value:new THREE.Vector3()},
         shadowEnabled:{value:settings.shadows?1:0},occluder:{value:new THREE.Vector3()},occluderRadius:{value:0},
       };
-      const mesh=new THREE.Mesh(geo,material(b.id==='sun'?sunFragment:surfaceFragment,uniforms));
+      const shapeLow=b.axes?shapeGeometry(b,96):geo,shapeHigh=b.axes?shapeGeometry(b,256):this.surfaceSphere;
+      const mesh=new THREE.Mesh(shapeLow,material(b.id==='sun'?sunFragment:surfaceFragment,uniforms));
       mesh.userData.body=b;spin.add(mesh);
-      const node={body:b,group,spin,mesh,uniforms,radius:b.radius/KM_PER_UNIT};
+      const node={body:b,group,spin,mesh,uniforms,shapeLow,shapeHigh,radius:b.radius/KM_PER_UNIT};
       if(hasAir||b.id==='sun') {
         const atmosphere=new THREE.Mesh(geo,material(atmosphereFragment,{
           sunDirection:uniforms.sunDirection,atmosphereColor:{value:b.id==='sun'?new THREE.Color('#ff8b32'):airColor},
-          strength:{value:b.id==='sun'?2.3:b.id==='mars'?.45:1.15},
+          strength:{value:b.id==='sun'?1.2:b.id==='mars'?.45:1.15},
         },{transparent:true,side:THREE.BackSide,blending:THREE.AdditiveBlending,depthWrite:false}));
         atmosphere.scale.setScalar(b.id==='sun'?1.16:b.id==='venus'||b.id==='titan'?1.055:1.025);
         spin.add(atmosphere);node.atmosphere=atmosphere;
@@ -101,7 +113,7 @@ export class Universe {
   radius(id) {
     const b=this.nodes.get(id).body;
     // Balanced mode enlarges bodies but leaves heliocentric distances unchanged.
-    return b.radius/KM_PER_UNIT*(this.settings.balanced?(b.id==='sun'?3:b.kind==='Planet'?Math.max(8,80/Math.sqrt(b.radius/6371)):60):1);
+    return b.radius/KM_PER_UNIT*(this.settings.balanced?(b.id==='sun'?3:b.kind==='Planet'?Math.max(8,80/Math.sqrt(b.radius/6371)):b.radius<150?4:60):1);
   }
   createStars(){
     const rand=seeded(72583),count=16000,pos=new Float32Array(count*3),colors=new Float32Array(count*3),sizes=new Float32Array(count);
@@ -170,7 +182,7 @@ export class Universe {
       if(node.atmosphere)node.atmosphere.visible=true;
       node.group.position.fromArray(this.renderPositions[b.id]).sub(origin);
       const radius=this.radius(b.id);node.group.scale.setScalar(radius);node.radius=radius;
-      node.mesh.geometry=node.group.position.length()<radius*1.15?this.surfaceSphere:this.lowSphere;
+      node.mesh.geometry=node.group.position.length()<radius*1.15?node.shapeHigh:node.shapeLow;
       node.mesh.rotation.y=((jd-J2000)/(Math.abs(b.rotation)||1)*Math.PI*2)%(Math.PI*2);
       if(node.clouds)node.clouds.rotation.y=node.mesh.rotation.y+((jd-J2000)/7.5*Math.PI*2)%(Math.PI*2);
       node.uniforms.radius.value=radius;node.uniforms.center.value.copy(node.group.position);
@@ -201,11 +213,14 @@ export class Universe {
     this.stars.visible=!insideDayAtmosphere;
     this.scene.backgroundIntensity=insideDayAtmosphere?.012:.18;
     this.sunLight.position.copy(this.nodes.get('sun').group.position);
+    const sunNode=this.nodes.get('sun');
+    this.bloom.strength=this.settings.bloom*(sunNode.radius/Math.max(sunNode.radius,sunNode.group.position.length())>.025?.32:1);
     this.landing.update(flight,time);
+    this.airPass.update(origin,time);
     this.scene.updateMatrixWorld();
   }
   render(){
-    if(this.settings.bloom>0)this.composer.render();else this.renderer.render(this.scene,this.camera);
+    this.composer.render();
     this.drawCount++;
   }
   pick(clientX,clientY){
@@ -215,6 +230,7 @@ export class Universe {
     return hits[0]?.object.userData.body.id;
   }
   project(id){
+    if(this.airPass.state.transmission<.02&&id!==this.airPass.state.body)return null;
     const n=this.nodes.get(id),v=n.group.position.clone(),forward=new THREE.Vector3(0,0,-1).applyQuaternion(this.camera.quaternion);
     if(v.dot(forward)<=0)return null;
     v.project(this.camera);
@@ -224,6 +240,6 @@ export class Universe {
   getDiagnostics(){
     return {webgl:this.renderer.getContext().getParameter(this.renderer.getContext().VERSION),frames:this.drawCount,
       shaderError:this.shaderError||null,geometries:this.renderer.info.memory.geometries,textures:this.renderer.info.memory.textures,
-      logarithmicDepthBuffer:this.renderer.capabilities.logarithmicDepthBuffer,bodies:this.nodes.size,landing:this.landing.diagnostics()};
+      logarithmicDepthBuffer:this.renderer.capabilities.logarithmicDepthBuffer,bodies:this.nodes.size,atmosphere:{...this.airPass.state},texturesRepaired:[...this.textures.entries()].filter(([,t])=>t.userData.repairedPixels).map(([name,t])=>({name,pixels:t.userData.repairedPixels})),irregularBodies:this.bodies.filter(b=>b.axes).map(b=>b.id),landing:this.landing.diagnostics()};
   }
 }

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { defaults } from '../electron/settings.js';
 import { createIcon } from './icon.mjs';
+import {canLand} from '../src/data/shapes.js';
 import { BODIES } from '../src/data/catalog.js';
 const root=process.cwd();
 await mkdir('test-output',{recursive:true});
@@ -35,16 +36,22 @@ try {
   await page.waitForTimeout(300);assert.ok((await state()).jd<startJD);
   await page.locator('#realtime').click();assert.equal((await state()).rate,1);
   checks.push('Reverse, maximum time warp, and realtime reset');
-  await page.locator('#search').fill('Europa');await page.locator('#search').press('Enter');await settle();
+  const inspection=await state();
+  await page.locator('[data-body="mars"]').click();await page.waitForTimeout(200);
+  let inspected=await state();assert.equal(inspected.selected,'mars');assert.equal(inspected.flightTarget,inspection.flightTarget);assert.equal(inspected.warp,false);
+  assert.ok(Math.hypot(...inspected.position.map((v,i)=>v-inspection.position[i]))<.1);
+  const lockBefore=await state();await page.locator('#orbit').click();await page.waitForTimeout(100);const locked=await state();assert.equal(locked.flightTarget,'mars');assert.equal(locked.warp,false);assert.ok(Math.hypot(...locked.position.map((v,i)=>v-lockBefore.position[i]))<.1);
+  checks.push('Selecting a body shows information and preserves the camera until Go to');
+  await page.locator('#search').fill('Europa');await page.locator('#search').press('Enter');await page.locator('#warp').click();await settle();
   assert.equal((await state()).selected,'europa');assert.equal((await state()).mode,'orbit');
   checks.push('Search-to-warp and satellite orbit tracking');
-  await page.locator('#search').fill('Saturn');await page.locator('#search').press('Enter');await settle();
+  await page.locator('#search').fill('Saturn');await page.locator('#search').press('Enter');await page.locator('#warp').click();await settle();
   await page.screenshot({path:'test-output/saturn.png'});
   assert.equal((await state()).selected,'saturn');
   await page.locator('#scale-toggle').click();assert.equal((await state()).settings.balanced,true);
   await page.locator('#scale-toggle').click();assert.equal((await state()).settings.balanced,false);
   checks.push('True scale / balanced scale transitions');
-  await page.locator('#search').fill('Earth');await page.locator('#search').press('Enter');await settle();
+  await page.locator('#search').fill('Earth');await page.locator('#search').press('Enter');await page.locator('#warp').click();await settle();
   await page.locator('#free-mode').click();
   const before=(await state()).position;
   await page.locator('#universe').click({position:{x:650,y:600}});
@@ -60,6 +67,7 @@ try {
     assert.ok(Math.abs(d.landing.latitude-lat)<.01);assert.ok(Math.abs(d.landing.longitude-lon)<.01);
     await page.screenshot({path:`test-output/auto-${name.toLowerCase()}-${type}.png`});
     console.log(`Automatic mapped surface verified: ${name} ${type} at ${lat}, ${lon}`);
+    if(name==='Earth'&&type==='water'){const pixels=await page.evaluate(()=>window.__cosmos.frameProbe());assert.ok(pixels[0].slice(0,3).reduce((sum,v,i)=>sum+Math.abs(v-pixels[2][i]),0)>25,'Atmosphere must retain nearby ocean contrast');}
   }
   checks.push('Automatic free-flight surfaces: mapped Earth ocean, Sahara sand, vegetation, ice; Moon, Mars, Europa and Pluto');
   // Start above the visibility threshold and descend using thrust alone.
@@ -97,24 +105,50 @@ try {
   assert.equal((await state()).landing.visible,true);
   await page.keyboard.press('f');assert.equal((await state()).mode,'free');assert.equal((await state()).landing.visible,true);
   checks.push('Body-fixed free flight follows orbital motion and spin; optional Land and walking remain available');
-  await page.locator('#orbit').click();await settle();assert.equal((await state()).landing.visible,false);
-  for(const name of ['Mercury','Venus','Io','Titan','Enceladus','Charon','Ceres','Eris','Jupiter']){
-    await page.locator('#search').fill(name);await page.locator('#search').press('Enter');await settle();
+  await page.locator('#surface-exit').click();await settle();assert.equal((await state()).landing.visible,false);
+  for(const name of ['Mercury','Venus','Io','Titan','Enceladus','Charon','Ceres','Eris']){
+    await page.locator('#search').fill(name);await page.locator('#search').press('Enter');await page.locator('#warp').click();await settle();
     await page.locator('#land').click();await settle();
     await page.waitForFunction(()=>window.__cosmos.diagnostics().landing.visible,{},{timeout:20000});
     assert.equal((await state()).shaderError,null);assert.equal((await state()).landing.error,null);
-    if(['Titan','Jupiter'].includes(name))await page.screenshot({path:`test-output/land-${name.toLowerCase()}.png`});
+    if(['Venus','Titan'].includes(name))await page.screenshot({path:`test-output/land-${name.toLowerCase()}.png`});
     console.log(`Landing verified: ${name}`);
   }
-  checks.push('Mapped rocky planets, moon systems, dwarf planets and gas giant cloud decks');
-  for(const body of BODIES.filter(b=>b.id!=='sun')){
+  checks.push('Mapped solid worlds, dense Venus and Titan atmospheres');
+  for(const body of BODIES.filter(canLand)){
     await page.evaluate(id=>window.__cosmos.place(id,0,0,30),body.id);
     await page.waitForFunction(id=>{const d=window.__cosmos.diagnostics();return d.landing.visible&&d.landing.body===id;},body.id,{timeout:20000});
     assert.equal((await state()).shaderError,null);assert.equal((await state()).landing.error,null);
   }
-  checks.push('Automatic terrain rendered on all 37 landable catalog bodies, including every included moon and dwarf planet');
+  checks.push('Automatic terrain rendered on every solid catalog body, including the new irregular moons');
 
-  await page.locator('#search').fill('Earth');await page.locator('#search').press('Enter');await settle();
+  // The scene compositor, rather than terrain alone, obscures space through dense air.
+  for(const id of ['venus','titan','saturn']){
+    await page.evaluate(id=>window.__cosmos.placeSunlit(id,100),id);
+    await page.waitForTimeout(300);d=await state();
+    assert.equal(d.atmosphere.body,id);assert.ok(d.atmosphere.transmission<.001);
+    if(id==='saturn')assert.equal(d.landing.visible,false);
+    await page.screenshot({path:`test-output/atmosphere-${id}.png`});
+  }
+  for(const id of ['jupiter','saturn','uranus','neptune','sun']){
+    await page.locator('#search').fill(id);await page.locator('#search').press('Enter');
+    assert.equal(await page.locator('#land').isDisabled(),true);
+    const before=await state();assert.equal(await page.evaluate(id=>window.__cosmos.tryLanding(id),id),false);
+    assert.equal((await state()).flightTarget,before.flightTarget);
+  }
+  checks.push('Dense atmospheric extinction blocks space; gas giants, ice giants and Sun reject all landing paths');
+  assert.ok((await state()).texturesRepaired.some(t=>t.name==='charon-usgs.jpg'&&t.pixels>0));
+  assert.ok((await state()).texturesRepaired.some(t=>t.name==='triton-usgs.jpg'&&t.pixels>0));
+  for(const id of ['deimos','phobos','pan','atlas','amalthea'])assert.ok((await state()).irregularBodies.includes(id));
+  checks.push('Missing spacecraft coverage is repaired and small moons use irregular geometry');
+  for(const [altitude,level] of [[6800,'regional'],[3000,'regional'],[100,'local']]){
+    await page.evaluate(alt=>window.__cosmos.place('earth',23,13,alt),altitude);
+    await page.waitForFunction(()=>window.__cosmos.diagnostics().landing.visible);
+    assert.equal((await state()).landing.detailLevel,level);
+    await page.screenshot({path:`test-output/lod-${altitude}.png`});
+  }
+  checks.push('Orbital-to-regional-to-local material and relief blending follows approach altitude');
+  await page.locator('#search').fill('Earth');await page.locator('#search').press('Enter');await page.locator('#warp').click();await settle();
   await page.locator('#settings-button').click();
   await page.locator('#quality').selectOption('medium');
   await page.locator('#shadows').uncheck();
@@ -137,7 +171,7 @@ try {
   await page.locator('#warp').click();await settle();
   await page.screenshot({path:'test-output/sun.png'});
   assert.equal((await state()).shaderError,null);
-  checks.push('Animated solar shader and corona close-up');
+  const spots=await page.evaluate(()=>window.__cosmos.sunspotProbe());assert.ok(spots.some(p=>p.spot<p.surface*.65),JSON.stringify(spots));assert.equal((await state()).sunspotRegions,14);checks.push('Animated solar shader, dark umbra/penumbra sunspot regions and corona close-up');
   await page.keyboard.press('h');assert.equal(await page.locator('.topbar').isVisible(),false);
   await page.locator('#show-hud').click();assert.equal(await page.locator('.topbar').isVisible(),true);
   await page.locator('#help-button').click();assert.equal(await page.locator('#help-dialog').isVisible(),true);
@@ -145,7 +179,7 @@ try {
   checks.push('HUD hiding and keyboard-accessible flight manual');
   // Return to the intended first-run appearance.
   await page.locator('#settings-button').click();await page.locator('#quality').selectOption('medium');await page.locator('#shadows').check();await page.locator('#orbit-lines').uncheck();await page.locator('#settings-dialog .dialog-close').click();
-  await page.locator('#search').fill('Earth');await page.locator('#search').press('Enter');await settle();
+  await page.locator('#search').fill('Earth');await page.locator('#search').press('Enter');await page.locator('#warp').click();await settle();
   await page.waitForTimeout(3000);
   d=await state();
   assert.equal(d.shaderError,null);

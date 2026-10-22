@@ -91,10 +91,38 @@ export const BODIES = [
     tilt:15,rotation:1,orbit:[a*149597870.7,e,i,L,p,N],procedural:'ice',
     description:'A remote dwarf planet beyond Neptune, with a frozen surface reconstructed from limited observational constraints.',
   })),
+  ...[
+    // NASA/NSSDCA mean orbit values; phases are illustrative. Axes are semiaxes (km).
+    ['metis','Metis','jupiter',21.5,3.6e16,.294779,128000,.001,3.15,[30,20,17]],
+    ['adrastea','Adrastea','jupiter',8.2,2e15,.298260,129000,.002,3.18,[10,8,7]],
+    ['amalthea','Amalthea','jupiter',83.5,2.08e18,.498179,181400,.003,3.51,[125,73,64]],
+    ['thebe','Thebe','jupiter',49.3,4.3e17,.6745,221900,.018,4.21,[58,49,42]],
+    ['pan','Pan','saturn',14,4.95e15,.5750,133583,0,26.73,[17,16,10]],
+    ['daphnis','Daphnis','saturn',3.8,7.7e13,.594,136500,0,26.73,[4.3,4.1,3.2]],
+    ['atlas','Atlas','saturn',15.1,6.6e15,.6019,137670,0,27.03,[20,18,9]],
+    ['prometheus','Prometheus','saturn',43.1,1.59e17,.6130,139353,.00204,26.73,[68,40,30]],
+    ['pandora','Pandora','saturn',40.6,1.37e17,.6285,141700,.0042,26.73,[52,41,32]],
+    ['epimetheus','Epimetheus','saturn',58.2,5.27e17,.6942,151422,.009,27.07,[65,57,53]],
+    ['janus','Janus','saturn',89.2,1.90e18,.6945,151472,.007,26.87,[102,93,76]],
+    ['hyperion','Hyperion','saturn',135,5.62e18,21.276609,1500930,.1042,27.16,[180,133,103]],
+  ].map(([id,name,parent,radius,mass,period,a,e,i,axes],index)=>({
+    id,name,parent,radius,mass,period,axes,gravity:6.67430e-11*mass/(radius*1000)**2,
+    kind:'Natural satellite',atmosphere:'None',color:parent==='jupiter'?'#a28c77':'#bcb4a5',
+    tilt:parent==='saturn'?26.73:3.13,rotation:period,orbit:[a,e,i,(index*137.5)%360,0,parent==='saturn'?169.5:100.5],
+    procedural:parent==='jupiter'?'rock':'ice',irregularity:id==='hyperion'?.11:.035,
+    ridge:['pan','atlas'].includes(id)?.15:0,
+    description:`A small irregular moon of ${parent==='jupiter'?'Jupiter':'Saturn'}. Its approximate shape follows published dimensions; unmapped terrain is reconstructed.`,
+  })),
 ];
 for(const id of ['io','europa','ganymede','callisto','titan','enceladus','mimas','tethys','dione','rhea','iapetus','triton','charon','phobos','deimos','ceres','vesta']) {
   BODIES.find(b=>b.id===id).texture=`${id}-usgs.jpg`;
 }
+// Small worlds keep their actual mean size; the mesh uses a shared radial shape field.
+for(const [id,axes,irregularity] of [
+  ['phobos',[13,11.4,9.1],.07],['deimos',[7.8,6,5.1],.045],
+  ['vesta',[286,279,223],.025],['pallas',[275,258,238],.035],
+  ['haumea',[1161,852,513],.005],
+])Object.assign(BODIES.find(b=>b.id===id),{axes,irregularity});
 export const TEXTURES = [
   ...BODIES.map(b=>b.texture).filter(Boolean),
   '2k_earth_nightmap.jpg','2k_earth_clouds.jpg','earth-normal.png',

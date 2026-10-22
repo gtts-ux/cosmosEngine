@@ -67,3 +67,9 @@ Spacecraft-derived global mosaics and shaded relief from [USGS Astrogeology’s 
 Pluto global color map: [NASA PIA11707](https://science.nasa.gov/image-detail/amf-pia11707/), New Horizons Ralph/MVIC, NASA/JHUAPL/SwRI. Unobserved or poorly observed areas are not high-resolution surveys.
 
 Exact downloaded URLs, credit labels, and SHA-256 hashes are recorded in `assets/manifest.json`. USGS source layers, source URLs, and ground material selections are maintained in `scripts/record-assets.mjs`.
+
+## Version 1.3 additions
+
+Small-moon mean orbit values and approximate axis dimensions: [NASA Jovian Satellite Fact Sheet](https://nssdc.gsfc.nasa.gov/planetary/factsheet/joviansatfact.html), [NASA Saturnian Satellite Fact Sheet](https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html), and [JPL satellite physical parameters](https://ssd.jpl.nasa.gov/sats/phys_par/). Phases, detailed shape roughness and new-moon maps are illustrative.
+
+White no-data coverage in the Charon and Triton spacecraft mosaics is filled at runtime with reconstructed material. Those regions are not additional spacecraft observations. Small-body meshes approximate published dimensions and do not reproduce mission shape models. Atmospheric colors, optical density, shimmer and sunspot activity are visual reconstructions.

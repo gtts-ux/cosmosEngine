@@ -3,9 +3,10 @@ import { SimulationClock, AU, fromJulian } from './physics/orbits.js';
 import { loadTextures } from './render/textures.js';
 import { Universe, KM_PER_UNIT } from './render/universe.js';
 import { Flight, speedLabel } from './navigation/flight.js';
-import { GAS_GIANTS } from './data/surfaces.js';
+import { canLand } from './data/shapes.js';
 
 const $=id=>document.getElementById(id);
+const thumbnailCache=new Map();
 const format=(n,d=0)=>n.toLocaleString('en-US',{maximumFractionDigits:d});
 let universe,flight,settings,selected='earth',activeFilter='planets',hud=true,lastUI=0,fpsFrames=0,fpsTime=0,lastFrame=performance.now(),elapsed=0,measuredFPS=0;
 const clock=new SimulationClock();
@@ -16,7 +17,13 @@ function toast(message){
 }
 function thumb(el,body){
   el.style.backgroundColor=body.color;
-  el.style.backgroundImage=body.texture?`url("assets/textures/${body.texture}")`:'none';
+  let url=body.texture?`assets/textures/${body.texture}`:null;
+  const image=universe?.textures.get(body.texture||body.id)?.image;
+  if(image instanceof HTMLCanvasElement){
+    if(!thumbnailCache.has(body.id))thumbnailCache.set(body.id,image.toDataURL('image/jpeg',.7));
+    url=thumbnailCache.get(body.id);
+  }
+  el.style.backgroundImage=url?`url("${url}")`:'none';
 }
 function bodyCategory(b){
   if(b.kind==='Natural satellite')return 'moons';
@@ -32,7 +39,7 @@ function buildBodyList(){
     const dot=document.createElement('span');dot.className='planet-dot';thumb(dot,b);
     const name=document.createElement('span');name.className='body-name';name.textContent=b.name;
     const index=document.createElement('span');index.className='body-index';index.textContent=b.id===selected?'●':String(i).padStart(2,'0');
-    button.append(dot,name,index);button.addEventListener('click',()=>select(b.id,true));$('body-list').append(button);
+    button.append(dot,name,index);button.addEventListener('click',()=>select(b.id));$('body-list').append(button);
   }
 }
 function setFilter(filter){
@@ -42,7 +49,7 @@ function setFilter(filter){
   }
   buildBodyList();
 }
-function select(id,travel=false){
+function select(id){
   const b=BY_ID[id];if(!b)return;
   selected=id;
   if(activeFilter!==bodyCategory(b))setFilter(bodyCategory(b));else buildBodyList();
@@ -59,9 +66,9 @@ function select(id,travel=false){
   $('scene-title').textContent=b.name;
   $('scene-context').textContent=b.parent&&b.parent!=='sun'?`${BY_ID[b.parent].name.toUpperCase()} SYSTEM / NATURAL SATELLITE`:`SOL SYSTEM / ${$('target-kind').textContent.toUpperCase()}`;
   $('scene-subtitle').textContent=id==='earth'?'A familiar world. A different perspective.':id==='saturn'?'Countless fragments. One extraordinary world.':id==='sun'?'The light at the center of it all.':id==='europa'?'An ocean of possibility beneath the ice.':'Every world has a story. Get a little closer.';
-  $('land').textContent=GAS_GIANTS.has(id)?'↓ Cloud tops':'↓ Land';
-  $('land').disabled=id==='sun';
-  if(travel)flight.visit(id);
+  $('land').textContent=canLand(b)?'↓ Land':'No solid surface';
+  $('land').disabled=!canLand(b);
+  $('land').title=canLand(b)?'Descend to this world':'Landing requires a solid surface';
   updateTargetDistance();
 }
 function updateTargetDistance(){
@@ -99,9 +106,9 @@ function changeRate(multiplier){
   timeUI();
 }
 function land(){
-  if(selected==='sun'){toast('Surface landing is unavailable for the Sun.');return;}
+  if(!canLand(BY_ID[selected])){toast('This body has no solid surface to land on.');return;}
   flight.visit(selected,false,'land');
-  toast(GAS_GIANTS.has(selected)?'Approaching the cloud tops. Press O to return to orbit.':'Approaching the surface. WASD to walk, drag to look, O to return to orbit.');
+  toast('Approaching the surface. WASD to walk, drag to look, O to return to orbit.');
 }
 function showSearch(){
   const query=$('search').value.trim().toLowerCase();const box=$('search-results');
@@ -112,7 +119,7 @@ function showSearch(){
     const button=document.createElement('button');button.className='search-result';button.dataset.searchBody=b.id;
     const title=document.createElement('strong');title.textContent=b.name;
     const kind=document.createElement('span');kind.textContent=b.kind;
-    button.append(title,kind);button.onclick=()=>{select(b.id,true);box.hidden=true;$('search').value='';$('search').blur();};box.append(button);
+    button.append(title,kind);button.onclick=()=>{select(b.id);box.hidden=true;$('search').value='';$('search').blur();};box.append(button);
   }
   if(!matches.length){const p=document.createElement('p');p.className='no-results';p.textContent='No worlds found. Try Mars, Europa, or Ceres.';box.append(p);}
   box.hidden=false;
@@ -122,11 +129,11 @@ function attachUI(){
   for(const b of document.querySelectorAll('[data-filter]'))b.onclick=()=>setFilter(b.dataset.filter);
   $('overview').onclick=()=>{select('sun');flight.overview();if(!settings.orbitLines){settings.orbitLines=true;applySettings();}toast('Solar system overview · scroll to explore the outer planets');};
   $('warp').onclick=()=>flight.visit(selected);
-  $('orbit').onclick=()=>flight.visit(selected);
+  $('orbit').onclick=()=>flight.lock(selected);
   $('land').onclick=land;
   $('surface-exit').onclick=()=>flight.visit(universe.landing.body?.id||selected);
   $('telescope-zoom').onclick=()=>{flight.camera.zoom=1;flight.camera.updateProjectionMatrix();};
-  $('orbit-mode').onclick=()=>flight.visit(selected);
+  $('orbit-mode').onclick=()=>flight.lock(selected);
   $('free-mode').onclick=()=>{flight.free();toast('WASD to fly · drag to look · scroll to change speed');};
   $('speed-slider').oninput=e=>flight.setSpeed(e.target.value);
   $('scale-toggle').onclick=()=>{
@@ -163,7 +170,7 @@ function attachUI(){
   document.addEventListener('pointerdown',e=>{if(!e.target.closest('.search-area'))$('search-results').hidden=true;});
   document.addEventListener('keydown',e=>{
     if((e.metaKey||e.ctrlKey)&&e.code==='KeyK'){e.preventDefault();$('search').focus();return;}
-    if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName)||document.querySelector('dialog[open]'))return;
+    if(document.activeElement?.matches('input:not([type=range]):not([type=checkbox]),select,textarea')||document.querySelector('dialog[open]'))return;
     if(e.repeat)return;
     const actions={KeyF:()=>flight.free(),KeyO:()=>flight.visit(selected),KeyL:land,KeyG:()=>flight.visit(selected),KeyH:toggleHUD,KeyR:()=>{clock.reset();timeUI();},Space:()=>{clock.paused=!clock.paused;timeUI();}};
     if(actions[e.code]){e.preventDefault();actions[e.code]();}
@@ -175,7 +182,7 @@ function attachUI(){
 const labelNodes=new Map();
 function createLabels(){
   for(const b of BODIES){
-    const el=document.createElement('button');el.className='object-label';el.textContent=b.name;el.setAttribute('aria-label',`Select ${b.name}`);el.onclick=()=>select(b.id,true);
+    const el=document.createElement('button');el.className='object-label';el.textContent=b.name;el.setAttribute('aria-label',`Select ${b.name}`);el.onclick=()=>select(b.id);
     $('labels').append(el);labelNodes.set(b.id,el);
   }
 }
@@ -228,7 +235,7 @@ async function main(){
   $('load-message').textContent='Starting the WebGL 2 observatory…';
   universe=new Universe($('universe'),BODIES,textures,settings);
   universe.updatePositions(clock.jd);
-  flight=new Flight(universe,$('universe'),modeChanged,id=>select(id,true));
+  flight=new Flight(universe,$('universe'),modeChanged,id=>select(id));
   document.querySelector('.count').textContent=`${BODIES.length} OBJECTS`;
   flight.visit('earth',true);universe.updateScene(clock.jd,0,flight.position);
   attachUI();createLabels();select('earth');applySettings();timeUI();
@@ -239,9 +246,30 @@ async function main(){
   window.__cosmos={
     ready:true,
     diagnostics:()=>({...universe.getDiagnostics(),selected,mode:flight.mode,jd:clock.jd,rate:clock.rate,paused:clock.paused,
-      position:flight.position.toArray(),zoom:flight.camera.zoom,effectiveFOV:flight.camera.getEffectiveFOV(),speed:flight.speed,settings:{...settings},warp:!!flight.warp,fps:measuredFPS}),
+      flightTarget:flight.target,sunspotRegions:14,position:flight.position.toArray(),zoom:flight.camera.zoom,effectiveFOV:flight.camera.getEffectiveFOV(),speed:flight.speed,settings:{...settings},warp:!!flight.warp,fps:measuredFPS}),
   };
   if((await window.cosmos.version()).testing){
+    window.__cosmos.placeSunlit=async(id,altitude=100)=>{
+      const {Vector3}=await import('three');const {surfaceCoordinates}=await import('./data/geography.js');
+      const d=new Vector3(...universe.renderPositions[id]).negate().normalize().applyQuaternion(universe.landing.bodyRotation(id).invert());
+      const c=surfaceCoordinates(d.toArray());await window.__cosmos.place(id,c.latitude,c.longitude,altitude);
+    };
+    window.__cosmos.sunspotProbe=async()=>{
+      const {Vector3}=await import('three');universe.render();const gl=universe.renderer.getContext(),node=universe.nodes.get('sun');
+      const direction=node.group.position.clone().negate().normalize(),rotation=universe.landing.bodyRotation('sun');
+      const pixel=p=>{const point=node.mesh.localToWorld(p.clone()).project(universe.camera),out=new Uint8Array(4);
+        gl.readPixels(Math.floor((point.x*.5+.5)*gl.drawingBufferWidth),Math.floor((point.y*.5+.5)*gl.drawingBufferHeight),1,1,gl.RGBA,gl.UNSIGNED_BYTE,out);return out[0]+out[1]+out[2];};
+      const samples=[];for(let k=0;k<14;k++){const lon=k*2.399963,lat=Math.sin(k*7.13)*.43,C=new Vector3(Math.cos(lat)*Math.cos(lon),Math.sin(lat),Math.cos(lat)*Math.sin(lon));
+        if(C.clone().applyQuaternion(rotation).dot(direction)<.4)continue;
+        const neighbor=C.clone().addScaledVector(new Vector3(-C.z,0,C.x).normalize(),.12).normalize();
+        samples.push({spot:pixel(C),surface:pixel(neighbor)});}
+      return samples;
+    };
+    window.__cosmos.frameProbe=()=>{
+      universe.render();const gl=universe.renderer.getContext(),w=gl.drawingBufferWidth,h=gl.drawingBufferHeight;
+      return [.2,.5,.8].map(y=>{const pixel=new Uint8Array(4);gl.readPixels(Math.floor(w*.5),Math.floor(h*y),1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);return [...pixel];});
+    };
+    window.__cosmos.tryLanding=id=>flight.visit(id,false,'land');
     window.__cosmos.place=async(id,latitude,longitude,altitude=1000,lookDown=false)=>{
       const {surfaceDirection}=await import('./data/geography.js');
       const {Vector3,Quaternion,Euler}=await import('three');

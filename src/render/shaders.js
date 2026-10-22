@@ -6,7 +6,7 @@ export const sphereVertex = /* glsl */`
   varying vec3 vPoint;
   varying vec3 vLocal;
   void main() {
-    vUv = uv; vLocal = position;
+    vUv = uv; vLocal = normalize(position);
     vNormal = normalize(mat3(modelMatrix) * normal);
     vPoint = (modelMatrix * vec4(position,1.0)).xyz;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
@@ -142,7 +142,18 @@ export const sunFragment = /* glsl */`
     float fine=snoise(vLocal*80.0-vec3(time*.05));
     float limb=pow(max(dot(normalize(vNormal),normalize(cameraPosition-vPoint)),0.0),.3);
     vec3 map=texture2D(dayMap,vUv).rgb;
-    vec3 color=vec3(1.0,.46,.08)*(2.6+n*.35+fine*.15)*(map.r*.7+.6)*(.65+limb*.35);
+    vec3 color=vec3(1.0,.62,.24)*(1.15+n*.12+fine*.06)*(map.r*.6+.4)*(.75+limb*.25);
+    // Body-fixed active regions: dark umbrae inside softer penumbrae.
+    vec3 d=normalize(vLocal);float spot=0.0;
+    for(int i=0;i<14;i++){
+      float k=float(i),longitude=k*2.399963,latitude=sin(k*7.13)*.43;
+      vec3 C=vec3(cos(latitude)*cos(longitude),sin(latitude),cos(latitude)*sin(longitude));
+      float r=.021+.013*(.5+.5*sin(k*13.7));float dist=length(d-C);
+      float edge=1.0-smoothstep(r*.7,r*1.65,dist);
+      float core=1.0-smoothstep(r*.35,r*.8,dist);
+      spot=max(spot,edge*.5+core*.46);
+    }
+    color*=1.0-spot;
     gl_FragColor=vec4(color,1);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

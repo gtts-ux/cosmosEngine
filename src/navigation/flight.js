@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {canLand,approachScale} from '../data/shapes.js';
 import { telescopeZoom } from '../data/geography.js';
 import { KM_PER_UNIT } from '../render/universe.js';
 const yAxis=new THREE.Vector3(0,1,0),xAxis=new THREE.Vector3(1,0,0),zAxis=new THREE.Vector3(0,0,1);
@@ -18,7 +19,7 @@ export class Flight {
     this.matrix=new THREE.Matrix4();this.lastTarget=new THREE.Vector3();
     this.landWalk=new THREE.Vector2();this.landYaw=0;this.landPitch=-.07;
     this.abort=new AbortController();const signal=this.abort.signal;
-    const editing=()=>['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName)||document.querySelector('dialog[open]');
+    const editing=()=>document.activeElement?.matches('input:not([type=range]):not([type=checkbox]),select,textarea')||document.querySelector('dialog[open]');
     window.addEventListener('keydown',e=>{
       if(editing())return;
       if(['KeyW','KeyS','KeyA','KeyD','KeyQ','KeyE','ArrowUp','ArrowDown','ShiftLeft','ShiftRight'].includes(e.code)){
@@ -76,8 +77,9 @@ export class Flight {
     return towardsSun.applyAxisAngle(yAxis,.62).add(new THREE.Vector3(0,.26,0)).normalize().multiplyScalar(this.universe.radius(id)*scale);
   }
   visit(id,instant=false,kind='orbit'){
+    if(kind==='land'&&!canLand(this.universe.nodes.get(id).body))return false;
     const previous=this.target;this.target=id;this.velocity.set(0,0,0);this.keys.clear();this.surfaceFrame=null;
-    let offset=this.offsetFor(id,id==='saturn'||id==='uranus'?8.2:5.1);
+    let offset=this.offsetFor(id,approachScale(this.universe.nodes.get(id).body));
     if(kind==='land'){
       if(previous===id)offset=this.position.clone().sub(this.targetPosition()).normalize();
       this.landLocal=offset.clone().normalize().applyQuaternion(this.universe.landing.bodyRotation(id).invert());
@@ -93,6 +95,12 @@ export class Flight {
     this.lastTarget.copy(target);this.onModeChange(kind);
   }
   free(){this.mode='free';this.warp=null;this.surfaceFrame=null;this.followSurface();this.keys.clear();this.onModeChange('free');}
+  lock(id){
+    this.target=id;this.warp=null;this.velocity.set(0,0,0);this.keys.clear();this.surfaceFrame=null;
+    const target=this.targetPosition(),spherical=new THREE.Spherical().setFromVector3(this.position.clone().sub(target));
+    this.theta=spherical.theta;this.phi=spherical.phi;this.distance=spherical.radius;
+    this.mode='orbit';this.lastTarget.copy(target);this.lookAt(target);this.onModeChange('orbit');
+  }
   orbit(){this.visit(this.target);}
   overview(){
     this.target='sun';this.mode='orbit';this.velocity.set(0,0,0);this.keys.clear();this.surfaceFrame=null;
