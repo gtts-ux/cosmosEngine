@@ -9,3 +9,9 @@ The original desktop checks cover the existing Solar System, selection/travel, n
 The release workflow runs the numerical tests and packages/verifies both macOS architectures. Only Intel runtime behavior is tested on this development hardware. Builds use ad-hoc signatures and are not Apple notarized.
 
 Limits: the HYG v4.1 subset is a static approximate catalog snapshot of primary entries. Proper motion, companions and binary dynamics are omitted. Spectral stellar properties are estimates. Generated planets, maps and fine terrain are fictional reconstructions. Keplerian planetary motion ignores mutual perturbations.
+
+Results: all 23 numerical tests and all 21 Solar System desktop regression groups passed. The packaged Intel application passed all 11 systems checks, including generation, interstellar travel, metre-scale walking at Proxima, free-flight arrival, invalid request rejection and restoration after restart. No renderer or shader errors were reported. The final stationary Earth orbital regression view reported 60 FPS at medium quality; this is a local observation, not a hardware-wide performance guarantee.
+
+Both local app bundles passed `codesign --verify --deep --strict`; both local DMGs passed `hdiutil verify`. The stellar import script reproduced the published catalog byte-for-byte from the checksum-pinned HYG source.
+
+[Public v1.4.0 release](https://github.com/gtts-ux/cosmosEngine/releases/tag/v1.4.0) includes both architectures and SHA-256 checksums. [The release workflow](https://github.com/gtts-ux/cosmosEngine/actions/runs/39791875441) completed successfully for both builds and publication.
