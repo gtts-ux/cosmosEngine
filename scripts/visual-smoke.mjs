@@ -31,8 +31,11 @@ try{
   assert.equal((await page.evaluate(id=>window.__cosmos.bodyProbe(id),id)).mesh,true);
  }
  checks.push('Free-flight thrust enters and exits all four giants; interiors obscure space and landing remains rejected');
- await page.evaluate(()=>window.__cosmos.place('moon',-35,-25,100));
+ await page.evaluate(()=>window.__cosmos.placeSunlit('moon',100));
  await page.waitForFunction(()=>window.__cosmos.diagnostics().landing.visible,{},{timeout:20000});
+ await page.waitForTimeout(1000);
+ const mountainPixels=await page.evaluate(()=>window.__cosmos.frameProbe());
+ assert.ok(mountainPixels.some(p=>Math.max(...p.slice(0,3))>25),JSON.stringify(mountainPixels));
  const moon=await page.evaluate(()=>window.__cosmos.bodyProbe('moon'));
  assert.ok(moon.rangeMeters>500,JSON.stringify(moon));assert.equal(moon.resolution,384);assert.ok(moon.groundVertices>=66049);
  await page.screenshot({path:'test-output/lunar-mountains.png'});checks.push('Lunar elevation mesh has mountains over 500 m and a detailed ground patch');
