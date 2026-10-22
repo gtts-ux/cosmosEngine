@@ -1,3 +1,4 @@
+import {surveyHeight} from './elevation.js';
 export const GAS_GIANTS = new Set(['jupiter','saturn','uranus','neptune']);
 export const isGasGiant=body=>!!body&&(body.surfaceType==='gas'||GAS_GIANTS.has(body.id));
 export const GROUND_TEXTURES = ['grass','sand','rock','ice'].flatMap(type=>
@@ -8,7 +9,7 @@ const profiles = {
   earth:{type:'grass',title:'Temperate grassland',tint:'#b4c692',relief:6,air:1},
   mercury:{...rock,tint:'#a69d91',title:'Sun-baked regolith',relief:24},
   venus:{...rock,tint:'#b98a50',title:'Volcanic basalt plains',air:2,relief:12},
-  mars:{...rock,tint:'#cf7950',title:'Iron-rich dust and rock',air:.3,relief:16},
+  mars:{...rock,tint:'#cf7950',title:'Iron-rich dust and rock',air:.3,relief:5,craterDensity:.12},
   moon:{...rock,tint:'#a7a7a4',title:'Lunar regolith'},
   io:{type:'volcanic',title:'Sulfur plains and lava fissures',tint:'#d8b250',relief:14,air:0},
   europa:{...ice,title:'Fractured ice and dark lineae',tint:'#cec5ae'},
@@ -65,7 +66,7 @@ export function terrainHeight(x,z,profile,seed) {
       const r=60+hash(cx+i,cz+j,seed+7)*130,d=Math.hypot(x-px,z-pz)/r;
       if(d<1.3)crater+=(-Math.max(0,1-d*d)*.5+Math.exp(-(((d-1)*7)**2))*.16)*r;
     }
-    return broad+fine+crater;
+    return broad+fine+crater*(profile.craterDensity??1);
   }
   return broad+fine;
 }
@@ -73,6 +74,7 @@ export function terrainHeight(x,z,profile,seed) {
 // not surveyed elevation data. The same field drives globe, tiles and collisions.
 export function mountainHeight(body,direction,biome){
   if(isGasGiant(body)||body.isStar||body.id==='sun'||biome==='water')return 0;
+  const measured=surveyHeight(body.id,direction);if(measured!==null)return biome==='water'?0:measured;
   let [x,y,z]=direction;const length=Math.hypot(x,y,z)||1,R=body.radius*1000;
   x=x/length*R;y=y/length*R;z=z/length*R;
   const seed=seedFor(body.id),scale=Math.min(90000,R*.14);
@@ -82,6 +84,6 @@ export function mountainHeight(body,direction,biome){
   const fine=(1-Math.abs(field(scale*.035,99)*2-1))**5;
   let peak=body.id==='mars'?18000:body.id==='earth'?6800:body.surfaceType==='ocean'?7000:body.procedural==='ice'?4000:6500;
   if(biome==='sand')peak*=.025;
-  return Math.min(peak,R*.012)*region*(ridge*.82+fine*.18);
+  return Math.min(peak,R*.012)*region*region*(ridge*.82+fine*.18);
 }
 export function terrainExtent(body) {return Math.min(64000,body.radius*1000*.2);}

@@ -82,3 +82,11 @@ White no-data coverage in the Charon and Triton spacecraft mosaics is filled at 
 ## Version 1.4 stellar neighborhood
 
 The 55 additional primary stellar entries derive from [HYG v4.1](https://github.com/astronexus/HYG-Database), David Nash / Astronomy Nexus, licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). The subset and coordinate transformations retain that data license; see DATA-LICENSE.md. `scripts/import-nearby-stars.py` can reproduce the subset from the checksum-pinned source table. Display aliases and spectral estimates were added. Catalog positions are not a current precision astrometric solution; binary companions are omitted. Generated planets and terrain are fictional and are not catalog exoplanet observations.
+
+## Version 1.7 galaxy and elevation data
+
+The HYG v4.1 subset now contains 256 primary stars, processed by the existing checksum-pinned importer under CC BY-SA 4.0. Stellar parameters remain spectral estimates. Galaxy positions and scales are approximate: [NASA Andromeda overview](https://www.nasa.gov/universe/galaxies/andromeda-galaxy/). Spiral structure and stars beyond the measured local catalog are fictional visual reconstructions.
+
+Mars elevation: NASA GSFC MOLA Team, Mars Global Surveyor, PDS product MEGT90N000CB, MGS-M-MOLA-5-MEGDR-L3-V1.0, version 2.0. [PDS archive](https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg004/), signed 16-bit meters, 1440 × 720. The included grid rotates longitude from 0–360 to −180–180 and converts to little endian. SHA-256: `dc13be36a6e08181b9db3abdfa5eaea962772c2da3bff0e8563f00bf14babd24`.
+
+Earth relief: [NASA Visible Earth Topography](https://visibleearth.nasa.gov/images/73934/topography), GEBCO 2008 normalized 8-bit elevation visualization, [source raster](https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73934/gebco_08_rev_elev_21600x10800.png). Downsampled to 1440 × 720 and mapped to an approximate 0–8000 m display range. Heights are illustrative; this is not a calibrated survey DEM. Included grid SHA-256: `2f63c802fed54e6d6189f371cd707df13e1c9b49a0ca9c27409b0e697a209a9a`. See `scripts/prepare-elevation.py` for conversion.

@@ -2,7 +2,7 @@
 
 An offline Mac explorer with the Solar System, nearby stars, procedural planets, free flight and detailed landing environments.
 
-**Download:** [Intel Mac installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.6.0-x64.dmg) · [Apple Silicon installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.6.0-arm64.dmg) · [All releases](https://github.com/gtts-ux/cosmosEngine/releases)
+**Download:** [Intel Mac installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.7.0-x64.dmg) · [Apple Silicon installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.7.0-arm64.dmg) · [All releases](https://github.com/gtts-ux/cosmosEngine/releases)
 
 Open the DMG and drag CosmosEngine-Mac into Applications. Requires macOS 12+ and WebGL 2. The installed app needs no Node.js, browser, server, or internet connection.
 
@@ -10,7 +10,7 @@ Builds use local ad-hoc signatures and are not Apple Developer ID notarized. If 
 
 ## Nearby stars and generated systems
 
-The catalog includes **55 nearby stars in addition to the Sun**, including Proxima Centauri, Alpha Centauri A, Barnard’s Star, Sirius, Tau Ceti and Epsilon Eridani. Their approximate J2000 positions and distances come from the HYG v4.1 catalog. The neighborhood view shows catalog positions. Nearby stars have bright colored cores and glow so they remain visible against the distant background; their minimum screen size is a visibility aid, not a physical angular diameter.
+The catalog includes **256 nearby stars in addition to the Sun**, including Proxima Centauri, Alpha Centauri A, Barnard’s Star, Sirius, Tau Ceti and Epsilon Eridani. Their approximate J2000 positions and distances come from the HYG v4.1 catalog. The neighborhood view shows catalog positions. Nearby stars have bright colored cores and glow so they remain visible against the distant background; their minimum screen size is a visibility aid, not a physical angular diameter.
 
 - Choose the **Stars** tab, use search, or select a system from **Browse system**. Inspecting a star changes the sidebar to its system without moving the camera.
 - Click **Go to** or press G to travel. The current-system label follows your physical location; free flight between systems switches the catalog on arrival.
@@ -25,6 +25,12 @@ The star catalog contains primary entries only; binary companions, proper motion
 System-local coordinates preserve ground movement after interstellar travel. All systems have lightweight catalog data from startup; nearby systems update their orbits while detailed terrain and maps stream automatically in a worker. Distant detail is released after departure. Planet illumination follows the host star. New systems do not require a manual load action.
 
 Generated solid-world maps progressively load up to 2K albedo with mineral variation, coastlines, shallow/deep oceans and polar frost. Ocean worlds also have independent cloud layers and water specular highlights. Existing spacecraft/global maps are preserved.
+
+## Galaxy exploration
+
+Use the galaxy selector, **Galaxy map** and **Enter galaxy** to explore the Milky Way, Andromeda, Triangulum and the Magellanic Clouds. Local fictional stars stream in a 10 / 20 / 50 light-year sphere for Performance / Balanced / High fidelity. Selecting a star opens its system catalog; **Go to** travels there. Newly added real HYG systems and procedural systems acquire planets and moons automatically, with old detailed systems released on departure.
+
+Sagittarius A* and M31* are searchable black holes with illustrative accretion disks and no landing surface. Galaxy structure and unresolved stars are reconstructions. Earth uses geographically aligned approximate relief, while Mars uses a measured MOLA elevation grid. Fine terrain remains procedural.
 
 ## Graphics and updates
 
@@ -49,7 +55,7 @@ Regional colors and Earth material selection follow available global imagery, wh
 
 ## Catalog
 
-A clean profile contains 560 objects: 105 fixed catalog entries plus 220 fictional extrasolar planets and 235 fictional moons. The fixed entries include the Sun, 55 nearby stars, eight Solar System planets, five dwarf planets, three asteroids and 33 moons. Saved custom worlds and their moons appear in their own host systems.
+A clean profile contains 560 objects: 105 fixed catalog entries plus 220 fictional extrasolar planets and 235 fictional moons. The fixed entries include the Sun, 256 nearby stars, eight Solar System planets, five dwarf planets, three asteroids and 33 moons. Saved custom worlds and their moons appear in their own host systems.
 
 - Earth: Moon.
 - Mars: Phobos, Deimos.

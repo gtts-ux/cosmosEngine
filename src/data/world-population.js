@@ -2,7 +2,7 @@ import {generatePlanet,randomSequence,isStar} from './systems.js';
 const AU_KM=149597870.7,G=6.67430e-11;
 export function defaultRecipes(stars,custom=[]){
  const occupied=new Set(custom.map(d=>`${d.hostId}:${d.index}`));
- return stars.filter(s=>isStar(s)&&s.id!=='sun').flatMap(star=>Array.from({length:4},(_,index)=>({hostId:star.id,index,seed:`neighborhood-v1-${star.id}`,type:['rocky','ocean','gas','ice'][index],name:''})).filter(d=>!occupied.has(`${d.hostId}:${d.index}`)));
+ return stars.filter(s=>isStar(s)&&!s.blackHole&&!s.streamedStar&&s.id!=='sun').flatMap(star=>Array.from({length:4},(_,index)=>({hostId:star.id,index,seed:`neighborhood-v1-${star.id}`,type:['rocky','ocean','gas','ice'][index],name:''})).filter(d=>!occupied.has(`${d.hostId}:${d.index}`)));
 }
 export function generateMoons(planet,star){
  const random=randomSequence(`${planet.id}:moons-v1`),gas=planet.surfaceType==='gas';

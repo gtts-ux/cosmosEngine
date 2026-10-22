@@ -50,6 +50,7 @@
       <div class="panel-heading flex justify-between items-center"><span class="eyebrow">EXPLORER</span><span class="count">20 OBJECTS</span></div>
       <button id="overview" class="system-button flex items-center gap-3"><span class="system-icon">◎</span><span><strong id="system-name">Solar System</strong><small id="system-status">Current system</small></span><span class="arrow">↗</span></button>
       <div class="system-picker"><label for="system-select">BROWSE SYSTEM</label><select id="system-select" aria-label="Browse star system"></select></div>
+      <div class="galaxy-controls"><label for="galaxy-select">GALAXY</label><select id="galaxy-select" aria-label="Galaxy"></select><div><button id="galaxy-map">Galaxy map</button><button id="galaxy-enter">Enter galaxy</button></div></div>
       <div class="system-actions"><button id="generate-planet">＋ Planet</button><button id="generate-system" hidden>Seed system</button><button id="neighborhood-view" title="View the local stellar neighborhood">⤢ Star map</button></div>
       <div class="explorer-tabs flex" role="tablist" aria-label="Object type">
         <button class="active" role="tab" aria-selected="true" data-filter="planets">Planets</button>
@@ -131,7 +132,7 @@
   </dialog>
   <dialog id="settings-dialog" class="panel modal">
     <div class="flex justify-between items-center"><div><span class="eyebrow">YOUR OBSERVATORY</span><h2>Settings</h2></div><button class="dialog-close icon-button" aria-label="Close settings">×</button></div>
-    <label class="setting-row"><span>Graphics quality<small>Resolution and GPU workload</small></span><select id="quality"><option value="low">Performance</option><option value="medium">Balanced</option><option value="high">High fidelity</option></select></label>
+    <label class="setting-row"><span>Graphics quality<small>Detail radius: 10 / 20 / 50 light-years</small></span><select id="quality"><option value="low">Performance</option><option value="medium">Balanced</option><option value="high">High fidelity</option></select></label>
     <label class="setting-row"><span>Bloom<small>Sun and city light glow</small></span><input id="bloom" type="range" min="0" max="1.5" step=".05"></label>
     <label class="setting-row"><span>Exposure<small>Scene brightness</small></span><input id="exposure" type="range" min=".5" max="2" step=".05"></label>
     <label class="setting-row"><span>Star density<small>Additional luminous stars</small></span><input id="stars" type="range" min="0" max="16000" step="500"></label>

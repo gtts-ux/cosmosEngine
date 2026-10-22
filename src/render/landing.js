@@ -4,6 +4,7 @@ import { terrainExtent,GROUND_TEXTURES } from '../data/surfaces.js';
 import { SurfaceAtlas } from './geography.js';
 import {isStar} from '../data/systems.js';
 import { shapeFactor,canLand } from '../data/shapes.js';
+import {surfaceLighting} from './shaders.js';
 import {terrainVertex,terrainFragment} from './terrain-shaders.js';
 import { surfaceVisible } from '../data/geography.js';
 
@@ -11,19 +12,22 @@ const upAxis=new THREE.Vector3(0,1,0);
 const waterVertex=`
   #include <common>
   #include <logdepthbuf_pars_vertex>
-  attribute vec2 globeUv;attribute vec3 basePosition;uniform float terrainBlend;varying vec2 atlasUV;
+  attribute vec2 globeUv;attribute vec3 basePosition;attribute float edgeWeight;varying float tileWeight;uniform float terrainBlend;varying vec2 atlasUV;
   varying vec3 p,n,worldPoint;
-  void main(){atlasUV=globeUv;p=mix(basePosition,position,terrainBlend);n=normalize(mat3(modelMatrix)*normal);worldPoint=(modelMatrix*vec4(p,1)).xyz;
+  void main(){tileWeight=edgeWeight;atlasUV=globeUv;p=mix(basePosition,position,terrainBlend);n=normalize(mat3(modelMatrix)*normal);worldPoint=(modelMatrix*vec4(p,1)).xyz;
     gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1);
     #include <logdepthbuf_vertex>
   }`;
 const waterFragment=`
   #include <common>
   #include <logdepthbuf_pars_fragment>
-  uniform sampler2D dayMap;uniform float time,terrainBlend,metersToUnits;varying vec2 atlasUV;uniform vec3 sunDirection,tint,up;
+  ${surfaceLighting}
+  uniform float time,terrainBlend,metersToUnits;varying vec2 atlasUV;varying float tileWeight;uniform vec3 tint,up;
   varying vec3 p,n,worldPoint;
   void main(){
     #include <logdepthbuf_fragment>
+    float threshold=fract(52.9829189*fract(dot(floor(gl_FragCoord.xy),vec2(.06711056,.00583715))));
+    if(tileWeight*terrainBlend<=threshold)discard;
     vec3 base=normalize(n),V=normalize(cameraPosition-worldPoint),L=normalize(sunDirection);
     vec3 T=normalize(cross(abs(base.y)>.99?vec3(1,0,0):vec3(0,1,0),base)),B=cross(base,T);
     vec2 slope=vec2(0.0);
@@ -40,9 +44,9 @@ const waterFragment=`
     vec3 sky=mix(vec3(.13,.29,.48),vec3(.62,.78,.85),horizon);
     float glint=pow(max(dot(reflect(-L,N),V),0.0),350.0)*7.0;
     vec3 color=mix(tint*(.42+max(dot(N,L),0.0)*.7),sky,fresnel*.8)+vec3(1,.91,.71)*glint;
-    vec3 orbital=texture2D(dayMap,atlasUV).rgb*(.012+max(dot(base,L),0.0)*1.65);
+    vec3 orbital=orbitalColor(atlasUV,n,worldPoint);
     float level=(1.0-smoothstep(30.0,4000.0,length(worldPoint-cameraPosition)/metersToUnits))*terrainBlend;
-    color=mix(orbital,color,.8+level*.2);
+    color=mix(orbital,color,level*tileWeight);
     gl_FragColor=vec4(color,1);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -93,14 +97,14 @@ export class LandingTerrain {
       this.clearGeometry();this.body=body;this.anchor=anchor;this.extent=extent;this.segments=segments;this.radiusMeters=body.radius*1000;
       this.frame=new THREE.Quaternion().setFromUnitVectors(upAxis,anchor);this.profile=this.sample(body,anchor).profile;
       const geo=this.universe.jobs.geometry(data),materials=[];
-      this.detailUniforms={terrainBlend:{value:0},metersToUnits:{value:1},
+      this.detailUniforms={...this.universe.nodes.get(body.id).uniforms,terrainBlend:{value:0},metersToUnits:{value:1},
         bodyToWorld:{value:new THREE.Matrix3()},terrainToBody:{value:new THREE.Matrix3().setFromMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(this.frame))},
         dayMap:this.universe.nodes.get(body.id).uniforms.dayMap,sunDirection:this.universe.nodes.get(body.id).uniforms.sunDirection};
       for(const type of ['grass','sand','rock','ice']){
         materials.push(new THREE.ShaderMaterial({vertexShader:terrainVertex,fragmentShader:terrainFragment,
           uniforms:{...this.detailUniforms,materialKind:{value:['rock','grass','sand','ice'].indexOf(type)},
             detailMap:{value:maps.get(`ground-${type}-color.jpg`)},
-            normalMap:{value:maps.get(`ground-${type}-normal.jpg`)},roughMap:{value:maps.get(`ground-${type}-rough.jpg`)}}}));
+            detailNormalMap:{value:maps.get(`ground-${type}-normal.jpg`)},roughMap:{value:maps.get(`ground-${type}-rough.jpg`)}}}));
       }
       const water=new THREE.ShaderMaterial({vertexShader:waterVertex,fragmentShader:waterFragment,
         uniforms:{time:{value:0},sunDirection:{value:new THREE.Vector3()},up:{value:new THREE.Vector3()},
@@ -164,7 +168,7 @@ export class LandingTerrain {
     this.detailUniforms.terrainBlend.value=this.detailBlend;this.detailUniforms.metersToUnits.value=factor;
     // Remove only the globe directly under the detailed disk, retaining the horizon.
     this.lastDetailedNode=node;node.uniforms.detailCenter.value.copy(this.anchor);
-    node.uniforms.detailCut.value=Math.cos(Math.atan(this.extent*.39/this.radiusMeters));
+    node.uniforms.detailCut.value=this.extent/this.radiusMeters;node.uniforms.detailBlend.value=this.detailBlend;
     if(node.clouds)node.clouds.visible=false;if(node.atmosphere)node.atmosphere.visible=false;
     const sample=this.sample(this.body,direction);this.profile=sample.profile;this.coordinates=sample;
     const sun=node.uniforms.sunDirection.value;

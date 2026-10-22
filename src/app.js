@@ -1,3 +1,6 @@
+import {GALAXIES,galaxyWorld,detailRadius} from './data/galaxies.js';
+import {populateWorlds} from './data/world-population.js';
+import {loadElevation} from './data/elevation.js';
 import {isStar,hostStarId,systemName,currentSystem,bodiesInSystem,LIGHT_YEAR_KM} from './data/systems.js';
 import { BODIES, BY_ID } from './data/catalog.js';
 import { SimulationClock, AU, fromJulian } from './physics/orbits.js';
@@ -33,16 +36,42 @@ function bodyCategory(b){
   if(b.kind==='Asteroid'||b.kind==='Dwarf planet')return 'small';
   return 'planets';
 }
+const streamedSystems=new Map();
+function ensureSystem(star){
+ if(!star||star.blackHole)return;
+ let added=[];
+ if(!byId[star.id])added.push(star);
+ if(star.streamedStar&&!catalog.some(b=>b.parent===star.id))added.push(...populateWorlds([{...star,streamedStar:false}]));
+ if(added.length){catalog.push(...added);for(const b of added)byId[b.id]=b;universe.addBodies(added);universe.rebuildStarPoints();universe.updatePositions(clock.jd);createLabels();buildSystemPicker();}
+ if(star.streamedStar)streamedSystems.set(star.id,performance.now());
+ // Keep at most three generated sector systems, plus any inspected/current targets.
+ const protectedIds=new Set([universe.referenceSystem,universe.activeSystem,browsingSystem,hostStarId(byId[flight?.target],byId),star.id]);
+ for(const [id] of [...streamedSystems].sort((a,b)=>a[1]-b[1])){
+  if(streamedSystems.size<=3)break;if(protectedIds.has(id))continue;
+  const ids=catalog.filter(b=>hostStarId(b,byId)===id&&(b.generated||b.fictional)).map(b=>b.id);universe.removeBodies(ids);
+  for(const id of ids){delete byId[id];labelNodes.get(id)?.remove();labelNodes.delete(id);thumbnailCache.delete(id);}
+  const removed=new Set(ids);catalog=catalog.filter(b=>!removed.has(b.id));streamedSystems.delete(id);
+ }
+}
+function nearbySectorStars(){return universe?.galaxyField.entries.filter(b=>!byId[b.id])||[];}
+function visitGalaxy(enter=false){
+ const g=GALAXIES.find(g=>g.id===$('galaxy-select').value);flight.free();universe.rebase('sun',flight);flight.target='sun';flight.camera.zoom=1;flight.camera.updateProjectionMatrix();
+ const offset=enter?[g.radius*.5,0,0]:[0,g.radius*1.6,g.radius*.8];
+ const point=galaxyWorld(g,offset);flight.position.set(...point.map(v=>v*LIGHT_YEAR_KM/KM_PER_UNIT));flight.velocity.set(0,0,0);flight.surfaceFrame=null;
+ const center=flight.position.clone().set(...g.center.map(v=>v*LIGHT_YEAR_KM/KM_PER_UNIT));flight.lookAt(center);flight.lastTarget.copy(flight.targetPosition());
+ setFilter('stars');$('scene-title').textContent=g.name;$('scene-context').textContent=enter?'AUTOMATIC LOCAL STAR STREAMING':'GALAXY OVERVIEW';$('scene-subtitle').textContent='Select a star for its system; Go to travels there.';
+ toast(enter?`Exploring ${g.name} · ${detailRadius(settings.quality)} ly detail radius`:`${g.name} overview · Enter galaxy to explore individual stars`);
+}
 function buildBodyList(){
   $('body-list').replaceChildren();
   const members=bodiesInSystem(catalog,browsingSystem);
-  const list=activeFilter==='stars'?catalog.filter(isStar):members.filter(b=>bodyCategory(b)===activeFilter);
+  const list=activeFilter==='stars'?[...catalog.filter(isStar),...nearbySectorStars().slice(0,80)]:members.filter(b=>bodyCategory(b)===activeFilter);
   $('system-name').textContent=systemName(byId[browsingSystem]);$('system-select').value=browsingSystem;
   $('system-status').textContent=browsingSystem===hereSystem?'Current system':'Preview · click Go to';
   document.querySelector('.count').textContent=activeFilter==='stars'?`${list.length} STARS`:`${members.length} BODIES`;
   const generated=members.filter(b=>b.generated&&b.kind==='Planet').length;
   $('generate-system').disabled=generationBusy||members.some(b=>b.kind==='Planet');
-  $('generate-planet').disabled=generationBusy||generated>=16;
+  $('generate-planet').disabled=generationBusy||generated>=16||byId[browsingSystem]?.fictional||byId[browsingSystem]?.blackHole;
   if(!list.length){const empty=document.createElement('p');empty.className='catalog-empty';empty.textContent=activeFilter==='planets'?'No planets in this catalog yet. Use ＋ Planet or Seed system to create fictional worlds here.':'No objects in this category for this system.';$('body-list').append(empty);}
   for(const [i,b] of list.entries()){
     const button=document.createElement('button');button.className=`body-row${b.id===selected?' active':''}`;button.dataset.body=b.id;
@@ -62,6 +91,7 @@ function setFilter(filter){
   buildBodyList();
 }
 function select(id){
+  const candidate=byId[id]||nearbySectorStars().find(b=>b.id===id);if(isStar(candidate))ensureSystem(candidate);
   const b=byId[id];if(!b)return;
   selected=id;browsingSystem=hostStarId(b,byId);
   if(activeFilter!==bodyCategory(b))setFilter(bodyCategory(b));else buildBodyList();
@@ -78,7 +108,7 @@ function select(id){
   $('scene-title').textContent=b.name;
   $('scene-context').textContent=b.parent&&b.parent!=='sun'?`${byId[hostStarId(b,byId)].name.toUpperCase()} SYSTEM / ${b.kind.toUpperCase()}`:`SOL SYSTEM / ${$('target-kind').textContent.toUpperCase()}`;
   $('scene-subtitle').textContent=id==='earth'?'A familiar world. A different perspective.':id==='saturn'?'Countless fragments. One extraordinary world.':id==='sun'?'The light at the center of it all.':id==='europa'?'An ocean of possibility beneath the ice.':'Every world has a story. Get a little closer.';
-  $('target-note').textContent=b.generated?(b.automatic?'FICTIONAL · Automatically populated':'FICTIONAL · Saved procedural world'):isStar(b)?'Catalog star · generated planets are fictional':$('target-note').textContent;
+  $('target-note').textContent=b.generated?(b.automatic?'FICTIONAL · Automatically populated':'FICTIONAL · Saved procedural world'):b.blackHole?'Black hole · illustrative accretion disk':b.fictional?'FICTIONAL · Streamed galaxy star':isStar(b)?'Catalog star · generated planets are fictional':$('target-note').textContent;
   $('land').textContent=canLand(b)?'↓ Land':'No solid surface';
   $('land').disabled=!canLand(b);
   $('land').title=canLand(b)?'Descend to this world':'Landing requires a solid surface';
@@ -133,8 +163,8 @@ function showSearch(){
   const query=$('search').value.trim().toLowerCase();const box=$('search-results');
   box.replaceChildren();
   if(!query){box.hidden=true;return;}
-  const matches=catalog.filter(b=>[b.name,b.kind,...(b.aliases||[])].some(value=>value.toLowerCase().includes(query))); 
-  for(const b of matches){
+  const matches=[...catalog,...nearbySectorStars()].filter(b=>[b.name,b.kind,...(b.aliases||[])].some(value=>value.toLowerCase().includes(query))); 
+  for(const b of matches.slice(0,80)){
     const button=document.createElement('button');button.className='search-result';button.dataset.searchBody=b.id;
     const title=document.createElement('strong');title.textContent=b.name;
     const kind=document.createElement('span');kind.textContent=b.kind;
@@ -150,8 +180,9 @@ function buildSystemPicker(){
 function updateSystemContext(){
   if(flight.warp)return;
   const next=currentSystem(flight.position.toArray().map((v,i)=>v*KM_PER_UNIT+universe.referenceAnchor[i]),catalog.filter(isStar));
+  if(next&&byId[next]?.streamedStar)ensureSystem(byId[next]);
   if(next!==hereSystem){hereSystem=next;if(next)universe.rebase(next,flight);else setFilter('stars');if(next&&hostStarId(byId[flight.target],byId)!==next)select(next);else if(next){browsingSystem=next;buildBodyList();}}
-  $('current-system').textContent=hereSystem?`Here: ${systemName(byId[hereSystem])}`:'Here: Interstellar space';
+  $('current-system').textContent=hereSystem?`Here: ${systemName(byId[hereSystem])}`:`Here: ${GALAXIES.find(g=>g.id===universe.galaxyField.currentGalaxy)?.name||'Intergalactic space'} · ${detailRadius(settings.quality)} ly detail`;
   $('system-status').textContent=browsingSystem===hereSystem?'Current system':'Preview · click Go to';
 }
 async function generateWorlds(hostId,count=1,type='random',name='',seed=''){
@@ -183,8 +214,10 @@ function attachUpdates(){
 
 function attachUI(){
   attachUpdates();
+  for(const g of GALAXIES){const option=document.createElement('option');option.value=g.id;option.textContent=g.name;$('galaxy-select').append(option);}
+  $('galaxy-map').onclick=()=>visitGalaxy(false);$('galaxy-enter').onclick=()=>visitGalaxy(true);
   $('system-select').onchange=e=>select(e.target.value);
-  $('neighborhood-view').onclick=()=>{setFilter('stars');flight.neighborhood();$('scene-title').textContent='Local Neighborhood';$('scene-context').textContent='55 NEARBY CATALOG STARS / J2000 POSITIONS';$('scene-subtitle').textContent='Select a star to inspect its system. Go to to travel.';toast('Local neighborhood · select a star to inspect its system');};
+  $('neighborhood-view').onclick=()=>{setFilter('stars');flight.neighborhood();$('scene-title').textContent='Local Neighborhood';$('scene-context').textContent='256 NEARBY CATALOG STARS / J2000 POSITIONS';$('scene-subtitle').textContent='Select a star to inspect its system. Go to to travel.';toast('Local neighborhood · select a star to inspect its system');};
   $('generate-planet').onclick=()=>{generationHost=browsingSystem;flight.keys.clear();flight.velocity.set(0,0,0);$('generate-form').reset();$('generate-host').textContent=`Orbiting ${byId[generationHost].name}`;$('generate-dialog').showModal();};
   $('generate-dialog').querySelector('.dialog-close').onclick=()=>$('generate-dialog').close();
   $('generate-form').onsubmit=e=>{e.preventDefault();generateWorlds(generationHost,1,$('generated-type').value,$('generated-name').value,$('generated-seed').value);};
@@ -292,6 +325,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 async function main(){
+  await loadElevation();
   settings=await window.cosmos.settings.load();
   const bodies=await window.cosmos.catalog();
   const savedWorlds=await window.cosmos.worlds.load();
@@ -301,6 +335,8 @@ async function main(){
   const textures=await loadTextures(catalog,progress=>{$('load-progress').style.width=`${progress*85}%`;});
   $('load-message').textContent='Starting the WebGL 2 observatory…';
   universe=new Universe($('universe'),catalog,textures,settings);
+  universe.onApproachStar=star=>ensureSystem(star);
+  universe.onSectorReady=()=>{if(activeFilter==='stars')buildBodyList();};
   universe.onTextureReady=body=>{thumbnailCache.delete(body.id);const row=document.querySelector(`[data-body="${body.id}"] .planet-dot`);if(row)thumb(row,body);if(selected===body.id)thumb($('target-thumb'),body);};
   universe.updatePositions(clock.jd);
   flight=new Flight(universe,$('universe'),modeChanged,id=>select(id));
@@ -317,6 +353,10 @@ async function main(){
       flightTarget:flight.target,sunspotRegions:14,position:flight.position.toArray(),zoom:flight.camera.zoom,effectiveFOV:flight.camera.getEffectiveFOV(),speed:flight.speed,settings:{...settings},warp:!!flight.warp,fps:measuredFPS}),
   };
   if((await window.cosmos.version()).testing){
+    window.__cosmos.exploreGalaxy=(id,enter=true)=>{$('galaxy-select').value=id;visitGalaxy(enter);};
+    window.__cosmos.selectBody=id=>select(id);
+    window.__cosmos.visitBody=id=>{select(id);flight.visit(id,true);};
+    window.__cosmos.sectorProbe=()=>universe.galaxyField.entries.slice(0,20).map(b=>({id:b.id,anchor:b.anchor}));
     window.__cosmos.starProbe=()=>{
       const points=universe.starIds.map(id=>({id,p:universe.project(id)})).filter(s=>s.p);
       const gl=universe.renderer.getContext(),ratio=universe.renderer.getPixelRatio();

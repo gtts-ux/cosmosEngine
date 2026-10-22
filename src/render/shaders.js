@@ -13,68 +13,72 @@ export const sphereVertex = /* glsl */`
     #include <logdepthbuf_vertex>
   }
 `;
-export const surfaceFragment = /* glsl */`
-  #include <common>
-  #include <logdepthbuf_pars_fragment>
-  uniform sampler2D dayMap, nightMap, normalMap, specMap;
+export const surfaceLighting = `  uniform sampler2D dayMap, nightMap, normalMap, specMap;
   uniform vec3 detailCenter;uniform float detailCut;
   uniform vec3 sunDirection, atmosphereColor, ringNormal, center, occluder;
   uniform float hasNight, hasNormal, hasSpecular, hasAtmosphere, radius, ringOuter, shadowEnabled, occluderRadius,cloudBoundary,oceanWorld;
-  varying vec2 vUv;
-  varying vec3 vNormal, vPoint, vLocal;
-  vec3 mappedNormal(vec3 n) {
-    vec3 q0=dFdx(vPoint),q1=dFdy(vPoint);
-    vec2 st0=dFdx(vUv),st1=dFdy(vUv);
+  vec3 mappedNormal(vec3 n,vec2 surfaceUV,vec3 point) {
+    vec3 q0=dFdx(point),q1=dFdy(point);
+    vec2 st0=dFdx(surfaceUV),st1=dFdy(surfaceUV);
     vec3 q1p=cross(q1,n),q0p=cross(n,q0);
     vec3 T=q1p*st0.x+q0p*st1.x, B=q1p*st0.y+q0p*st1.y;
     float scale=inversesqrt(max(max(dot(T,T),dot(B,B)),1e-16));
-    vec3 mapN=texture2D(normalMap,vUv).xyz*2.0-1.0;
+    vec3 mapN=texture2D(normalMap,surfaceUV).xyz*2.0-1.0;
     mapN.xy*=0.45;
     return normalize(mat3(T*scale,B*scale,n)*mapN);
   }
-  void main() {
-    #include <logdepthbuf_fragment>
-    // Screen-door dissolve preserves scene depth outside the covered samples.
-    float threshold=fract(52.9829189*fract(dot(floor(gl_FragCoord.xy),vec2(.06711056,.00583715))));
-    if(cloudBoundary<threshold)discard;
-    if(detailCut>0.0&&dot(normalize(vLocal),detailCenter)>detailCut)discard;
-    vec3 geometric=normalize(vNormal);
-    vec3 n=hasNormal>0.5?mappedNormal(geometric):geometric;
-    vec3 L=normalize(sunDirection), V=normalize(cameraPosition-vPoint);
+vec3 orbitalColor(vec2 surfaceUV,vec3 geoNormal,vec3 point){
+    vec3 geometric=normalize(geoNormal);
+    vec3 n=hasNormal>0.5?mappedNormal(geometric,surfaceUV,point):geometric;
+    vec3 L=normalize(sunDirection), V=normalize(cameraPosition-point);
     float ndl=dot(n,L);
     float light=max(ndl,0.0), shadow=1.0;
     if(shadowEnabled>0.5 && ringOuter>0.0) {
       float denom=dot(L,ringNormal);
-      float t=-dot(vPoint-center,ringNormal)/(abs(denom)>0.001?denom:0.001);
-      float r=length(vPoint-center+L*t)/radius;
+      float t=-dot(point-center,ringNormal)/(abs(denom)>0.001?denom:0.001);
+      float r=length(point-center+L*t)/radius;
       if(t>0.0 && r>1.25 && r<ringOuter) {
         float cassini=smoothstep(1.93,1.96,r)*(1.0-smoothstep(2.0,2.025,r));
         shadow=mix(0.23,0.95,cassini);
       }
     }
     if(shadowEnabled>0.5 && occluderRadius>0.0) {
-      vec3 toMoon=occluder-vPoint;
+      vec3 toMoon=occluder-point;
       float along=dot(toMoon,L);
       float miss=length(toMoon-L*along);
       if(along>0.0)shadow*=smoothstep(occluderRadius*.93,occluderRadius*1.08,miss);
     }
-    vec3 day=texture2D(dayMap,vUv).rgb;
+    vec3 day=texture2D(dayMap,surfaceUV).rgb;
     vec3 color=day*(0.012+light*1.65*shadow);
     float night=(1.0-smoothstep(-0.12,0.12,dot(geometric,L)));
-    color+=texture2D(nightMap,vUv).rgb*night*hasNight*2.2;
+    color+=texture2D(nightMap,surfaceUV).rgb*night*hasNight*2.2;
     float spec=pow(max(dot(reflect(-L,n),V),0.0),75.0);
-    float ocean=oceanWorld>.5?step(day.r*1.8,day.b)*step(day.g*1.05,day.b):texture2D(specMap,vUv).r;
+    float ocean=oceanWorld>.5?step(day.r*1.8,day.b)*step(day.g*1.05,day.b):texture2D(specMap,surfaceUV).r;
     color+=vec3(1.0,.94,.84)*spec*ocean*hasSpecular*light*.8*shadow;
     float seaFresnel=.035+.965*pow(1.0-max(dot(n,V),0.0),5.0);
     vec3 seaSky=mix(vec3(.13,.29,.48),vec3(.62,.78,.85),pow(1.0-abs(dot(reflect(-V,n),geometric)),2.0));
     color=mix(color,seaSky*(.04+light*.9),ocean*hasSpecular*seaFresnel*.8);
     float rim=pow(1.0-max(dot(geometric,V),0.0),3.5);
     color+=atmosphereColor*rim*pow(max(dot(geometric,L)+.2,0.0),.7)*hasAtmosphere*.5;
-    gl_FragColor=vec4(color,1.0);
-    #include <tonemapping_fragment>
-    #include <colorspace_fragment>
-  }
+return color;
+}
 `;
+export const surfaceFragment = `
+#include <common>
+#include <logdepthbuf_pars_fragment>
+${surfaceLighting}
+uniform float detailBlend;
+varying vec2 vUv;varying vec3 vNormal,vPoint,vLocal;
+void main(){
+ #include <logdepthbuf_fragment>
+ float threshold=fract(52.9829189*fract(dot(floor(gl_FragCoord.xy),vec2(.06711056,.00583715))));
+ if(cloudBoundary<threshold)discard;
+ float coverage=detailCut>0.0?(1.0-smoothstep(.27,.47,length(normalize(vLocal)-detailCenter)/detailCut))*detailBlend:0.0;
+ if(coverage>threshold)discard;
+ gl_FragColor=vec4(orbitalColor(vUv,vNormal,vPoint),1.0);
+ #include <tonemapping_fragment>
+ #include <colorspace_fragment>
+}`;
 export const atmosphereFragment = /* glsl */`
   #include <common>
   #include <logdepthbuf_pars_fragment>

@@ -1,3 +1,4 @@
+import {BLACK_HOLES} from './galaxies.js';
 import { NEARBY_STARS } from './nearby-stars.js';
 import { GROUND_TEXTURES } from './surfaces.js';
 // Physical values are rounded mean values; distances/radii in km, mass in kg,
@@ -124,7 +125,7 @@ for(const [id,axes,irregularity] of [
   ['vesta',[286,279,223],.025],['pallas',[275,258,238],.035],
   ['haumea',[1161,852,513],.005],
 ])Object.assign(BODIES.find(b=>b.id===id),{axes,irregularity});
-BODIES.push(...NEARBY_STARS);
+BODIES.push(...NEARBY_STARS,...BLACK_HOLES);
 export const TEXTURES = [
   ...BODIES.map(b=>b.texture).filter(Boolean),
   '2k_earth_nightmap.jpg','2k_earth_clouds.jpg','earth-normal.png',

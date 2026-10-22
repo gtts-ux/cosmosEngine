@@ -1,12 +1,11 @@
-Automatic populated systems, streamed detail, improved exoplanet surfaces and an update button.
+Galaxy exploration and terrain polish in CosmosEngine-Mac 1.7.0.
 
-- Every nearby star now has four deterministic fictional planets. A clean profile adds 220 planets and 235 stable-orbit moons to the fixed catalog. Existing custom planets and their seeds are preserved. No separate system generation/load action is needed.
-- Distant systems retain lightweight data; nearby orbital calculations, terrain and maps activate automatically. A worker builds maps and elevation meshes, old tiles stay visible until replacements are ready, and unused detail is released on departure.
-- Reduced terrain tessellation and hidden-body work; added adaptive scene resolution with a Settings toggle. The HUD retains its normal resolution. Performance depends on hardware, display size and scene.
-- Exoplanet ground now uses photographed, body-fixed triplanar rock, sand, grass and ice materials, normal/roughness detail and planet-specific colors. Ocean waves are filtered to reduce repetitive lines.
-- Jupiter/Saturn use 4096 × 2048 cloud imagery near the planet. Fictional gas giants use photo-derived cloud templates with seeded variation and animated cloud motion. Stars and gas giants still reject landing; free flight can enter giant atmospheres.
-- Added **↥ App updates**: check GitHub, download the matching Mac installer and verify its SHA-256 checksum. Open the verified installer, quit CosmosEngine and replace the app in Applications. Saved worlds/settings are retained. These ad-hoc builds use the installer flow rather than silent replacement.
+- Ground tiles share the globe’s lighting and fade across a broad, complementary coverage mask. Close-up material contrast preserves the planet’s regional palette. Small bodies progressively stream higher-detail procedural maps; microrelief scales down on tiny moons.
+- Mars uses NASA MOLA 0.25-degree measured elevations. Earth uses a NASA GEBCO geographic relief raster with approximate heights. Local rocks and fine surface detail remain procedural reconstructions.
+- Expanded the HYG catalog from 55 to 256 real nearby primary stars. Newly added systems populate when approached or inspected.
+- Explore the Milky Way, Andromeda, Triangulum and both Magellanic Clouds. Galaxy map shows the distant structure; Enter galaxy opens a local neighborhood. Fictional stars generate in fixed sectors within 10 ly on Performance, 20 ly on Balanced and 50 ly on High fidelity. Planetary systems and moons load on approach. Old generated systems are released.
+- Added Sagittarius A* and M31* with Schwarzschild-size horizons and illustrative accretion disks. They cannot be landed on.
 
-Generated worlds, moons, terrain and altered gas imagery are fictional reconstructions. Stellar catalog estimates and approximate Keplerian dynamics remain unchanged.
+Galaxy structures, procedural stars, planets and moons are reconstructions; catalog stars are labeled separately. Black-hole rendering is an artistic approximation, not general-relativistic ray tracing. Earth’s normalized height raster is not a precision DEM. Mars’s measured grid is approximately 15 km per pixel at the equator; finer detail is illustrative.
 
-Choose x64 for Intel Macs or arm64 for Apple Silicon. Requires macOS 12+. Builds are ad-hoc signed and are not Apple notarized. Exploration works offline; update checks/downloads require internet.
+Choose x64 for Intel or arm64 for Apple Silicon. Builds are ad-hoc signed, not notarized. The App updates button downloads and verifies the installer; quit the app and replace it in Applications.

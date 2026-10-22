@@ -7,13 +7,13 @@ export class TerrainBuilder {
  point(x,z){return new THREE.Vector3(x,this.radiusMeters,z).normalize().applyQuaternion(this.frame);}
   makeGeometry(segments){
     const geo=new THREE.PlaneGeometry(this.extent,this.extent,segments,segments);geo.rotateX(-Math.PI/2);
-    const pos=geo.attributes.position,uv=geo.attributes.uv,basePositions=new Float32Array(pos.count*3),globeUVs=new Float32Array(pos.count*2),types=[],detailPoints=new Float32Array(pos.count*3);
+    const pos=geo.attributes.position,uv=geo.attributes.uv,basePositions=new Float32Array(pos.count*3),globeUVs=new Float32Array(pos.count*2),types=[],edgeWeights=new Float32Array(pos.count),detailPoints=new Float32Array(pos.count*3);
     const anchorU=this.sample(this.body,this.anchor).u;
     const inverse=this.frame.clone().invert(),detailOrigin=this.anchor.clone().multiplyScalar(this.radiusMeters).divideScalar(4096).floor().multiplyScalar(4096);
     for(let i=0;i<pos.count;i++){
       const x=pos.getX(i),z=pos.getZ(i),d=this.point(x,z),s=this.sample(this.body,d);
       const bp=d.clone().multiplyScalar(this.radiusMeters).sub(detailOrigin);detailPoints.set([bp.x,bp.y,bp.z],i*3);
-      const edge=THREE.MathUtils.smoothstep(Math.hypot(x,z)/this.extent,.36,.48);
+      const edge=THREE.MathUtils.smoothstep(Math.hypot(x,z)/this.extent,.27,.47);edgeWeights[i]=1-edge;
       const shapeHeight=(shapeFactor(this.body,d.toArray())-1)*this.radiusMeters;
       const macro=shapeHeight+s.mountain;
       const baseline=d.clone().multiplyScalar(this.radiusMeters+macro).applyQuaternion(inverse);
@@ -34,6 +34,6 @@ export class TerrainBuilder {
     }
     geo.clearGroups();const joined=[];
     for(let i=0;i<groups.length;i++){geo.addGroup(joined.length,groups[i].length,i);for(const index of groups[i])joined.push(index);}
-    geo.setIndex(joined);geo.setAttribute('basePosition',new THREE.BufferAttribute(basePositions,3));geo.setAttribute('globeUv',new THREE.BufferAttribute(globeUVs,2));geo.setAttribute('surfacePoint',new THREE.BufferAttribute(detailPoints,3));geo.computeVertexNormals();return geo;
+    geo.setIndex(joined);geo.setAttribute('edgeWeight',new THREE.BufferAttribute(edgeWeights,1));geo.setAttribute('basePosition',new THREE.BufferAttribute(basePositions,3));geo.setAttribute('globeUv',new THREE.BufferAttribute(globeUVs,2));geo.setAttribute('surfacePoint',new THREE.BufferAttribute(detailPoints,3));geo.computeVertexNormals();return geo;
   }
 }

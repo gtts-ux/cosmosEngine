@@ -12,4 +12,4 @@ export function shapeFactor(body,[x,y,z]){
   return ellipsoid*(1+bump+ridge);
 }
 export function canLand(body){return !isStar(body)&&!isGasGiant(body);}
-export function approachScale(body){return Math.max(body.id==='saturn'||body.id==='uranus'?8.2:5.1,body.radius<150?120/body.radius:0);}
+export function approachScale(body){return body.blackHole?35:Math.max(body.id==='saturn'||body.id==='uranus'?8.2:5.1,body.radius<150?120/body.radius:0);}

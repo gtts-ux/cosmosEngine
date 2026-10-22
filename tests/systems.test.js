@@ -5,9 +5,9 @@ import {NEARBY_STARS} from '../src/data/nearby-stars.js';
 import {isStar,hostStarId,bodiesInSystem,currentSystem,generatePlanet,sanitizeWorlds,restorePlanets} from '../src/data/systems.js';
 import {canLand} from '../src/data/shapes.js';
 import {positionsAt,elementsAt,positionFromElements,J2000} from '../src/physics/orbits.js';
-test('55 real nearby catalog stars are spatially distinct and non-landable',()=>{
- assert.equal(NEARBY_STARS.length,55);assert.equal(BODIES.filter(isStar).length,56);assert.ok(BY_ID['proxima-centauri']);
- for(const s of NEARBY_STARS){assert.ok(s.anchor.every(Number.isFinite));assert.ok(s.distanceLY>4&&s.distanceLY<20);assert.equal(canLand(s),false);assert.ok(s.radius>0&&s.mass>0);}
+test('256 real nearby catalog stars are spatially distinct and non-landable',()=>{
+ assert.equal(NEARBY_STARS.length,256);assert.equal(BODIES.filter(isStar).length,259);assert.ok(BY_ID['proxima-centauri']);
+ for(const s of NEARBY_STARS){assert.ok(s.anchor.every(Number.isFinite));assert.ok(s.distanceLY>4&&s.distanceLY<33);assert.equal(canLand(s),false);assert.ok(s.radius>0&&s.mass>0);}
  assert.equal(new Set(BODIES.map(b=>b.id)).size,BODIES.length);
 });
 test('generated planets repeat from recipes and orbit their selected star',()=>{

@@ -28,7 +28,7 @@ export class SurfaceAtlas {
     const biome=(body.id==='earth'||body.surfaceType==='ocean')?earthBiome(rgb):null;
     let profile=surfaceProfile(body,biome);
     if(body.id==='earth'&&biome==='ice')profile={type:'ice',title:'Snow and ice',tint:'#d9e1e4',relief:8,air:1};
-    if(body.id==='earth'&&biome==='rock')profile={type:'rock',title:'Rocky terrain',tint:'#a39e8f',relief:12,air:1};
+    if(body.id==='earth'&&biome==='rock')profile={type:'rock',title:'Rocky terrain',tint:'#a39e8f',relief:4,air:1,craterDensity:0};
     const color=new THREE.Color().setRGB(...rgb.map(c=>c/255),THREE.SRGBColorSpace);
     if(body.id==='moon'){const l=(color.r+color.g+color.b)/3;color.setRGB(l,l,l);}
     // A fixed body-coordinate field survives tile recentering, revisits and rotation.
@@ -36,6 +36,7 @@ export class SurfaceAtlas {
     const R=body.radius*1000,d=direction.clone().normalize().multiplyScalar(R),seed=seedFor(body.id);
     const heights=profile.type==='water'?0:(terrainHeight(d.x,d.z,profile,seed)+terrainHeight(d.y,d.x,profile,seed+91)+terrainHeight(d.z,d.y,profile,seed+237))/3;
     const mountain=mountainHeight(body,direction.toArray(),biome);
-    return {...coords,rgb,color,profile,mountain,height:heights+mountain+(shapeFactor(body,direction.toArray())-1)*R};
+    const reliefScale=Math.min(1,body.radius*1000/10000);
+    return {...coords,rgb,color,profile,mountain,height:heights*reliefScale+mountain+(shapeFactor(body,direction.toArray())-1)*R};
   }
 }
