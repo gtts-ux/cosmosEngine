@@ -74,7 +74,7 @@ void main(){
  float threshold=fract(52.9829189*fract(dot(floor(gl_FragCoord.xy),vec2(.06711056,.00583715))));
  if(cloudBoundary<threshold)discard;
  float coverage=detailCut>0.0?(1.0-smoothstep(.27,.47,length(normalize(vLocal)-detailCenter)/detailCut))*detailBlend:0.0;
- if(coverage>threshold)discard;
+ // The globe remains an opaque backing layer beneath blended terrain.
  gl_FragColor=vec4(orbitalColor(vUv,vNormal,vPoint),1.0);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>

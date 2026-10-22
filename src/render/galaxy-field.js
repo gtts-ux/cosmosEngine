@@ -13,7 +13,15 @@ export class GalaxyField{
     const world=galaxyWorld(g,[Math.cos(angle)*r,thickness,Math.sin(angle)*r]);p.push(...world.map((v,k)=>v-g.center[k]));
     const core=1-r/g.radius,t=random();c.push(.3+core*.7,.36+core*.4,.52+core*.22);s.push(t>.98?3:1.4);
    }
-   const disk=points(p,c,s);disk.frustumCulled=false;universe.scene.add(disk);this.disks.push({g,disk});
+   const disk=points(p,c,s);disk.frustumCulled=false;universe.scene.add(disk);
+   const haze=new THREE.Mesh(new THREE.PlaneGeometry(g.radius*2,g.radius*2),new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,
+    uniforms:{arms:{value:g.arms}},vertexShader:'varying vec2 uvDisk;void main(){uvDisk=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:`varying vec2 uvDisk;uniform float arms;void main(){vec2 p=(uvDisk-.5)*2.0;float r=length(p);if(r>1.0)discard;
+     float a=atan(p.y,p.x),phase=arms*(a-log(1.0+r*30.0)*2.5),band=pow(.5+.5*cos(phase),7.0);
+     float grain=.85+.15*sin(p.x*183.0+sin(p.y*47.0))*sin(p.y*161.0);
+     float disk=exp(-r*3.5)*(.15+band*.65)*grain*(1.0-smoothstep(.7,1.0,r)),core=exp(-r*24.0)*.9;
+     vec3 color=mix(vec3(.28,.42,.75),vec3(1.0,.72,.39),exp(-r*8.0));gl_FragColor=vec4(color,disk+core);}` }));
+   haze.rotation.x=g.tilt-Math.PI/2;haze.frustumCulled=false;universe.scene.add(haze);this.disks.push({g,disk,haze});
   }
   this.neighbors=points([],[],[]);this.neighbors.frustumCulled=false;universe.scene.add(this.neighbors);
  }
@@ -40,7 +48,7 @@ export class GalaxyField{
   }
   attr.needsUpdate=true;sizes.needsUpdate=true;this.neighbors.material.uniforms.ratio.value=u.renderer.getPixelRatio();
   if(min<.5&&!flight.warp)u.onApproachStar?.(closest);
-  for(const {g,disk} of this.disks){const d=g.center.map((v,i)=>v-p[i]),scale=1e7/Math.max(g.radius,Math.hypot(...d));disk.position.set(...d.map(v=>v*scale));disk.scale.setScalar(scale);disk.geometry.setDrawRange(0,u.settings.quality==='low'?4000:u.settings.quality==='medium'?8000:12000);disk.updateMatrixWorld(true);}
+  for(const {g,disk,haze} of this.disks){const d=g.center.map((v,i)=>v-p[i]),scale=1e7/Math.max(g.radius,Math.hypot(...d));disk.position.set(...d.map(v=>v*scale));disk.scale.setScalar(scale);disk.geometry.setDrawRange(0,u.settings.quality==='low'?4000:u.settings.quality==='medium'?8000:12000);disk.updateMatrixWorld(true);haze.position.copy(disk.position);haze.scale.setScalar(scale);haze.updateMatrixWorld(true);}
   this.neighbors.updateMatrixWorld(true);
  }
  pick(x,y){const camera=this.universe.camera,forward=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion),a=this.neighbors.geometry.attributes.position;let best=null,miss=10;

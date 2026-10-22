@@ -27,7 +27,7 @@ const waterFragment=`
   void main(){
     #include <logdepthbuf_fragment>
     float threshold=fract(52.9829189*fract(dot(floor(gl_FragCoord.xy),vec2(.06711056,.00583715))));
-    if(tileWeight*terrainBlend<=threshold)discard;
+    float coverage=tileWeight*terrainBlend;if(coverage<.001)discard;
     vec3 base=normalize(n),V=normalize(cameraPosition-worldPoint),L=normalize(sunDirection);
     vec3 T=normalize(cross(abs(base.y)>.99?vec3(1,0,0):vec3(0,1,0),base)),B=cross(base,T);
     vec2 slope=vec2(0.0);
@@ -47,7 +47,7 @@ const waterFragment=`
     vec3 orbital=orbitalColor(atlasUV,n,worldPoint);
     float level=(1.0-smoothstep(30.0,4000.0,length(worldPoint-cameraPosition)/metersToUnits))*terrainBlend;
     color=mix(orbital,color,level*tileWeight);
-    gl_FragColor=vec4(color,1);
+    gl_FragColor=vec4(color,coverage);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }`;
@@ -102,16 +102,16 @@ export class LandingTerrain {
         bodyToWorld:{value:new THREE.Matrix3()},terrainToBody:{value:new THREE.Matrix3().setFromMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(this.frame))},
         dayMap:this.universe.nodes.get(body.id).uniforms.dayMap,sunDirection:this.universe.nodes.get(body.id).uniforms.sunDirection};
       for(const type of ['grass','sand','rock','ice']){
-        materials.push(new THREE.ShaderMaterial({vertexShader:terrainVertex,fragmentShader:terrainFragment,
+        materials.push(new THREE.ShaderMaterial({vertexShader:terrainVertex,fragmentShader:terrainFragment,transparent:true,depthTest:false,depthWrite:true,
           uniforms:{...this.detailUniforms,materialKind:{value:['rock','grass','sand','ice'].indexOf(type)},
             detailMap:{value:maps.get(`ground-${type}-color.jpg`)},
             detailNormalMap:{value:maps.get(`ground-${type}-normal.jpg`)},roughMap:{value:maps.get(`ground-${type}-rough.jpg`)}}}));
       }
-      const water=new THREE.ShaderMaterial({vertexShader:waterVertex,fragmentShader:waterFragment,
+      const water=new THREE.ShaderMaterial({vertexShader:waterVertex,fragmentShader:waterFragment,transparent:true,depthTest:false,depthWrite:true,
         uniforms:{time:{value:0},sunDirection:{value:new THREE.Vector3()},up:{value:new THREE.Vector3()},
           tint:{value:new THREE.Color('#125d73')},...this.detailUniforms}});
       materials.push(water);this.waterMaterial=water;
-      this.ground=new THREE.Mesh(geo,materials);this.ground.frustumCulled=false;this.root.add(this.ground);
+      this.ground=new THREE.Mesh(geo,materials);this.ground.frustumCulled=false;this.ground.renderOrder=10;this.root.add(this.ground);
       this.ready=true;this.loadingBody=null;
     }catch(error){this.loadingBody=null;this.error=error.message;console.error('Surface texture error:',error);}
   }
@@ -167,7 +167,7 @@ export class LandingTerrain {
     this.detailBlend=1-THREE.MathUtils.smoothstep(near.altitude,this.extent*.055,this.extent*.3);
     this.detailUniforms.bodyToWorld.value.setFromMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(bodyQ));
     this.detailUniforms.terrainBlend.value=this.detailBlend;this.detailUniforms.metersToUnits.value=factor;
-    // Remove only the globe directly under the detailed disk, retaining the horizon.
+    // Keep opaque orbital coverage beneath the transparent, feathered detail disk.
     this.lastDetailedNode=node;node.uniforms.detailCenter.value.copy(this.anchor);
     node.uniforms.detailCut.value=this.extent/this.radiusMeters;node.uniforms.detailBlend.value=this.detailBlend;
     if(node.clouds)node.clouds.visible=false;if(node.atmosphere)node.atmosphere.visible=false;

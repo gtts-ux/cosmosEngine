@@ -23,7 +23,7 @@ export const terrainFragment=`
  void main(){
   #include <logdepthbuf_fragment>
   float threshold=fract(52.9829189*fract(dot(floor(gl_FragCoord.xy),vec2(.06711056,.00583715))));
-  if(tileWeight*terrainBlend<=threshold)discard;
+  float coverage=tileWeight*terrainBlend;if(coverage<.001)discard;
   float metres=length(worldPoint-cameraPosition)/metersToUnits;
   float regional=(1.0-smoothstep(120.0,5500.0,metres))*terrainBlend*tileWeight;
   float fine=(1.0-smoothstep(25.0,900.0,metres))*terrainBlend*tileWeight;
@@ -47,7 +47,7 @@ export const terrainFragment=`
   float spec=pow(max(dot(reflect(-L,N),V),0.0),mix(18.0,65.0,1.0-rough))*fine*.025;
   vec3 orbital=orbitalColor(atlasUV,worldNormal,worldPoint);
   vec3 detailed=albedo*(.012+lit*1.65)+spec;
-  gl_FragColor=vec4(mix(orbital,detailed,regional),1.0);
+  gl_FragColor=vec4(mix(orbital,detailed,regional),coverage);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
  }`;

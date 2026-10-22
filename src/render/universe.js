@@ -362,7 +362,7 @@ gl_FragColor=vec4(mix(c,vec3(1.0),.45)*5.0,core+halo);}`});
     this.scene.backgroundIntensity=insideDayAtmosphere?.012:this.galaxyField.currentGalaxy==='milky-way'?.12:0;
     if(primary){this.sunLight.position.copy(primary.group.position);this.sunLight.color.set(primary.body.color);}
     const angular=primary?primary.radius/Math.max(primary.radius,primary.group.position.length()):0;
-    this.bloom.strength=this.settings.bloom*(angular>.025?.32:1);
+    this.bloom.strength=this.settings.bloom*(primary?.body.blackHole?.12:angular>.025?.32:1);
     const starPositions=this.nearbyStars.geometry.attributes.position,starSizes=this.nearbyStars.geometry.attributes.size;
     for(let i=0;i<this.starIds.length;i++){
       const n=this.nodes.get(this.starIds[i]),p=n.group.position,d=p.length(),ly=d*KM_PER_UNIT/9.4607304725808e12;

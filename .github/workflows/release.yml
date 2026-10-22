@@ -9,7 +9,7 @@ permissions:
   contents: read
 concurrency:
   group: mac-release-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   validate:
@@ -35,6 +35,7 @@ jobs:
           retention-days: 7
 
   build:
+    if: github.ref == 'refs/heads/main'
     needs: validate
     name: Build ${{ matrix.arch }} DMG
     runs-on: macos-latest

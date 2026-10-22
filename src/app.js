@@ -22,6 +22,7 @@ function toast(message){
 }
 function thumb(el,body){
   el.style.backgroundColor=body.color;
+  if(body.blackHole){el.style.backgroundImage='radial-gradient(circle,#000 32%,#ffb56c 36%,#2a170e 47%,#000 65%)';return;}
   if(isStar(body)&&body.id!=='sun'){el.style.backgroundImage=`radial-gradient(circle at 35% 30%,#ffffff,${body.color} 45%,#241b28 100%)`;return;}
   let url=body.texture?`assets/textures/${body.texture}`:null;
   const image=universe?.textures.get(body.texture||body.id)?.image;
@@ -287,7 +288,7 @@ function createLabels(){
 function updateLabels(){
   const placed=[];
   for(const b of catalog){
-    const el=labelNodes.get(b.id);if(!universe.nodes.get(b.id).group.visible){el.hidden=true;continue;}const p=settings.labels&&hud&&selected!==b.id?universe.project(b.id):null;
+    const el=labelNodes.get(b.id);if(!universe.nodes.get(b.id).group.visible){el.hidden=true;continue;}const p=settings.labels&&hud&&!universe.landing.visible&&selected!==b.id?universe.project(b.id):null;
     // Reserve the panels and avoid a stack of unreadable labels at interstellar distances.
     const bodyPoint=universe.nodes.get(b.id).group.position;
     const selectedNode=universe.nodes.get(selected);

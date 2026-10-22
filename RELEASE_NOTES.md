@@ -1,6 +1,6 @@
 Galaxy exploration and terrain polish in CosmosEngine-Mac 1.7.0.
 
-- Ground tiles share the globe’s lighting and fade across a broad, complementary coverage mask. Close-up material contrast preserves the planet’s regional palette. Small bodies progressively stream higher-detail procedural maps; microrelief scales down on tiny moons.
+- Ground tiles share the globe’s lighting and fade across a broad, overlapping opacity mask. Close-up material contrast preserves the planet’s regional palette. Small bodies progressively stream higher-detail procedural maps; microrelief scales down on tiny moons.
 - Mars uses NASA MOLA 0.25-degree measured elevations. Earth uses a NASA GEBCO geographic relief raster with approximate heights. Local rocks and fine surface detail remain procedural reconstructions.
 - Expanded the HYG catalog from 55 to 256 real nearby primary stars. Newly added systems populate when approached or inspected.
 - Explore the Milky Way, Andromeda, Triangulum and both Magellanic Clouds. Galaxy map shows the distant structure; Enter galaxy opens a local neighborhood. Fictional stars generate in fixed sectors within 10 ly on Performance, 20 ly on Balanced and 50 ly on High fidelity. Planetary systems and moons load on approach. Old generated systems are released.
