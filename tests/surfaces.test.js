@@ -5,7 +5,7 @@ import { GROUND_TEXTURES,GAS_GIANTS,surfaceProfile,terrainHeight,terrainExtent,s
 test('every landable body has a valid finite terrain model',()=>{
   for(const b of BODIES.filter(b=>b.id!=='sun')){
     const p=surfaceProfile(b),seed=seedFor(b.id);assert.ok(p.type&&p.title);assert.ok(p.relief>=0);
-    const extent=terrainExtent(b);assert.ok(extent>0&&extent<=24000);
+    const extent=terrainExtent(b);assert.ok(extent>0&&extent<=64000);
     for(const [x,z] of [[0,0],[37,-120],[-extent/3,extent/3]])assert.ok(Number.isFinite(terrainHeight(x,z,p,seed)),b.id);
   }
 });

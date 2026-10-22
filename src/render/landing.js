@@ -69,7 +69,8 @@ export class LandingTerrain {
       const radius=this.universe.radius(body.id),factor=radius/(body.radius*1000);
       const local=this.localDirection(body.id,position);
       const altitude=(position.distanceTo(new THREE.Vector3(...this.universe.renderPositions[body.id]))-radius*shapeFactor(body,local.toArray()))/factor;
-      if(!best||altitude<best.altitude)best={body,altitude};
+      const ground=canLand(body)&&altitude<50000?this.sample(body,local).mountain:0;
+      if(!best||altitude-ground<best.altitude)best={body,altitude:altitude-ground};
     }
     return best;
   }
@@ -84,7 +85,7 @@ export class LandingTerrain {
       this.frame=new THREE.Quaternion().setFromUnitVectors(upAxis,this.anchor);
       this.profile=this.sample(body,this.anchor).profile;
       this.extent=terrainExtent(body);this.radiusMeters=body.radius*1000;
-      const geo=this.makeGeometry(128),materials=[];
+      const geo=this.makeGeometry(256),materials=[];
       this.detailUniforms={terrainBlend:{value:0},metersToUnits:{value:1},
         dayMap:this.universe.nodes.get(body.id).uniforms.dayMap,sunDirection:this.universe.nodes.get(body.id).uniforms.sunDirection};
       for(const type of ['grass','sand','rock','ice']){
@@ -113,7 +114,7 @@ export class LandingTerrain {
     if(local.y<=0)return fallback();
     const x=local.x/local.y*this.radiusMeters,z=local.z/local.y*this.radiusMeters;
     if(Math.hypot(x,z)>this.extent*.35)return fallback();
-    const segments=128,ix=Math.floor((x/this.extent+.5)*segments),iz=Math.floor((z/this.extent+.5)*segments);
+    const segments=256,ix=Math.floor((x/this.extent+.5)*segments),iz=Math.floor((z/this.extent+.5)*segments);
     const positions=this.ground.geometry.attributes.position;
     const ray=new THREE.Ray(new THREE.Vector3(0,-this.radiusMeters,0),local.normalize());
     const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),hit=new THREE.Vector3();
@@ -136,11 +137,12 @@ export class LandingTerrain {
       const x=pos.getX(i),z=pos.getZ(i),d=this.point(x,z),s=this.sample(this.body,d);
       const edge=THREE.MathUtils.smoothstep(Math.hypot(x,z)/this.extent,.36,.48);
       const shapeHeight=(shapeFactor(this.body,d.toArray())-1)*this.radiusMeters;
-      const baseline=d.clone().multiplyScalar(this.radiusMeters+shapeHeight).applyQuaternion(inverse);
+      const macro=shapeHeight+s.mountain;
+      const baseline=d.clone().multiplyScalar(this.radiusMeters+macro).applyQuaternion(inverse);
       basePositions.set([baseline.x,baseline.y-this.radiusMeters,baseline.z],i*3);
       let u=s.u;if(u-anchorU>.5)u-=1;if(u-anchorU<-.5)u+=1;
       globeUVs.set([u,1-s.v],i*2);
-      const p=d.multiplyScalar(this.radiusMeters+shapeHeight+(s.height-shapeHeight)*(1-edge)).applyQuaternion(inverse);
+      const p=d.multiplyScalar(this.radiusMeters+macro+(s.height-macro)*(1-edge)).applyQuaternion(inverse);
       pos.setXYZ(i,p.x,p.y-this.radiusMeters,p.z);uv.setXY(i,x/12,z/12);
       types.push(s.profile.type==='water'?4:Math.max(0,['grass','sand','rock','ice'].indexOf(s.profile.type==='volcanic'?'rock':s.profile.type==='cloud'?'ice':s.profile.type)));
     }
@@ -153,7 +155,7 @@ export class LandingTerrain {
       groups[t].push(...ids);
     }
     geo.clearGroups();const joined=[];
-    for(let i=0;i<groups.length;i++){geo.addGroup(joined.length,groups[i].length,i);joined.push(...groups[i]);}
+    for(let i=0;i<groups.length;i++){geo.addGroup(joined.length,groups[i].length,i);for(const index of groups[i])joined.push(index);}
     geo.setIndex(joined);geo.setAttribute('basePosition',new THREE.BufferAttribute(basePositions,3));geo.setAttribute('globeUv',new THREE.BufferAttribute(globeUVs,2));geo.computeVertexNormals();return geo;
   }
   clearGeometry(){

@@ -299,6 +299,35 @@ async function main(){
       flightTarget:flight.target,sunspotRegions:14,position:flight.position.toArray(),zoom:flight.camera.zoom,effectiveFOV:flight.camera.getEffectiveFOV(),speed:flight.speed,settings:{...settings},warp:!!flight.warp,fps:measuredFPS}),
   };
   if((await window.cosmos.version()).testing){
+    window.__cosmos.starProbe=()=>{
+      const points=universe.starIds.map(id=>({id,p:universe.project(id)})).filter(s=>s.p);
+      const gl=universe.renderer.getContext(),ratio=universe.renderer.getPixelRatio();
+      const read=()=>points.map(({p})=>{
+        const pixels=new Uint8Array(9*9*4);
+        const x=Math.max(0,Math.min(gl.drawingBufferWidth-9,Math.floor(p.x*ratio)-4));
+        const y=Math.max(0,Math.min(gl.drawingBufferHeight-9,Math.floor((innerHeight-p.y)*ratio)-4));
+        gl.readPixels(x,y,9,9,gl.RGBA,gl.UNSIGNED_BYTE,pixels);return pixels;
+      });
+      universe.nearbyStars.visible=false;universe.render();const background=read();
+      universe.nearbyStars.visible=true;universe.render();const stars=read();
+      return points.map((s,i)=>({id:s.id,brightness:Math.max(...stars[i].map((v,j)=>j%4===3?0:v-background[i][j]))}));
+    };
+    window.__cosmos.gasFlight=async(id,fraction=1.02)=>{
+      const {Vector3}=await import('three');const node=universe.nodes.get(id);
+      select(id);universe.rebase(node.hostId,flight);flight.target=id;flight.free();
+      const direction=universe.lightDirection(id),center=new Vector3(...universe.renderPositions[id]);
+      flight.position.copy(center).addScaledVector(direction,universe.radius(id)*fraction);
+      flight.camera.lookAt(direction.clone().negate());flight.velocity.set(0,0,0);flight.surfaceFrame=null;
+      flight.setSpeed(Math.log10(node.body.radius*1000*.3));
+    };
+    window.__cosmos.bodyProbe=id=>{
+      const n=universe.nodes.get(id),R=universe.radius(id);
+      const p=n.mesh.geometry.attributes.position;let low=Infinity,high=-Infinity;
+      for(let i=0;i<p.count;i++){const r=Math.hypot(p.getX(i),p.getY(i),p.getZ(i));low=Math.min(low,r);high=Math.max(high,r);}
+      return {fraction:n.group.position.length()/R,mesh:n.mesh.visible,mode:flight.mode,
+        rangeMeters:(high-low)*n.body.radius*1000,resolution:n.terrainResolution||0,
+        groundVertices:universe.landing.ground?.geometry.attributes.position.count||0};
+    };
     window.__cosmos.placeSunlit=async(id,altitude=100)=>{
       const {Vector3}=await import('three');const {surfaceCoordinates}=await import('./data/geography.js');
       const d=universe.lightDirection(id).applyQuaternion(universe.landing.bodyRotation(id).invert());

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { shapeFactor } from '../data/shapes.js';
 import { surfaceCoordinates,earthBiome } from '../data/geography.js';
-import { surfaceProfile,terrainHeight,seedFor } from '../data/surfaces.js';
+import { surfaceProfile,terrainHeight,seedFor,mountainHeight } from '../data/surfaces.js';
 
 // Lazily read the same albedo image displayed on the globe. Keep at most two CPU atlases.
 export class SurfaceAtlas {
@@ -29,6 +29,7 @@ export class SurfaceAtlas {
     // Blended projections avoid longitude seams and polar singularities in microrelief.
     const R=body.radius*1000,d=direction.clone().normalize().multiplyScalar(R),seed=seedFor(body.id);
     const heights=profile.type==='water'?0:(terrainHeight(d.x,d.z,profile,seed)+terrainHeight(d.y,d.x,profile,seed+91)+terrainHeight(d.z,d.y,profile,seed+237))/3;
-    return {...coords,rgb,color,profile,height:heights+(shapeFactor(body,direction.toArray())-1)*R};
+    const mountain=mountainHeight(body,direction.toArray(),biome);
+    return {...coords,rgb,color,profile,mountain,height:heights+mountain+(shapeFactor(body,direction.toArray())-1)*R};
   }
 }

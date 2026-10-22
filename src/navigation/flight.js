@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {isStar} from '../data/systems.js';
 import {canLand,approachScale} from '../data/shapes.js';
+import {isGasGiant} from '../data/surfaces.js';
 import { telescopeZoom } from '../data/geography.js';
 import { KM_PER_UNIT } from '../render/universe.js';
 const yAxis=new THREE.Vector3(0,1,0),xAxis=new THREE.Vector3(1,0,0),zAxis=new THREE.Vector3(0,0,1);
@@ -169,6 +170,7 @@ export class Flight {
   collide(previous){
     const movement=this.position.clone().sub(previous),length2=movement.lengthSq();
     for(const b of this.universe.bodies){
+      if(isGasGiant(b))continue;
       const center=new THREE.Vector3(...this.universe.renderPositions[b.id]),base=this.universe.radius(b.id),factor=base/(b.radius*1000);
       let radius=base+5*factor;
       if(canLand(b)&&this.position.distanceTo(center)<base+50000*factor){

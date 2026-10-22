@@ -1,12 +1,9 @@
-Explore the local stellar neighborhood and build your own planetary systems.
+Brighter nearby stars, continuous mountain terrain and gas-giant free flight.
 
-- Added 55 nearby catalog stars beyond the Sun, including Proxima Centauri, Alpha Centauri A, Barnard’s Star, Sirius and Tau Ceti. Their approximate spatial positions come from HYG v4.1; the sky includes camera-relative, selectable star points and colored stellar surfaces.
-- The catalog now follows the system being inspected or physically visited. Choose Stars, search, or Browse system to preview another host without moving. Go to remains the travel action. A neighborhood overview frames the nearby stars.
-- Generate individual random, rocky, ocean, ice or gas planets around the browsed star. Names and seeds are optional. Seed system adds four fictional planets to an empty system.
-- Generated planets have host-relative Keplerian orbits, deterministic global textures, host-star illumination and automatic local terrain. Solid worlds are landable; stars and gas giants remain non-landable.
-- Saved generation recipes survive app restarts. The Solar System remains intact. Limits: 16 generated worlds per host and 256 total.
-- System-local CPU coordinates preserve metre-scale ground movement after travelling several light-years.
+- Nearby catalog stars now have visible colored cores and glow. Open **⤢ Star map** to see the neighborhood, select a star for information, then choose **Go to** to travel. Minimum screen sizes are a visibility aid.
+- Generated worlds now use 2K maps with multiscale mineral variation, more intricate coastlines, shallow/deep ocean colors and polar frost. Ocean worlds have moving cloud layers and ocean specular highlights. Existing planetary imagery is retained.
+- Added deterministic mountain ranges to solid planets and moons. Globe elevation, 64 km ground patches and terrain collisions use the same body-fixed field; close detail blends into that field as you approach. Elevation and unsurveyed surfaces are reconstructions, not measured topography or photographs.
+- Free flight can enter and exit Jupiter, Saturn, Uranus, Neptune and generated gas giants. Cloud tops dissolve into dense atmospheric haze, space is obscured inside, and deeper layers darken. There is no artificial solid floor; Land remains disabled.
+- Added pixel-based star visibility tests, mountain continuity/bounds tests and desktop entry/exit checks for giant atmospheres.
 
-Star positions are catalog approximations; stellar sizes/masses are estimates. Binary companions and proper motion are omitted. Generated planets are explicitly fictional; this is not an observed-exoplanet catalog. The derived star table is CC BY-SA 4.0 with attribution in DATA-LICENSE.md; application code remains MIT.
-
-Download x64 for Intel Macs or arm64 for Apple Silicon. macOS 12+; local ad-hoc signatures, without Apple notarization. The installed app runs offline.
+Download **x64** for Intel or **arm64** for Apple Silicon. Requires macOS 12+. These builds use local ad-hoc signatures and are not Apple notarized. The installed app works offline.

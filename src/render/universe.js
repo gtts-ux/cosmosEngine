@@ -9,7 +9,8 @@ import {isStar,hostStarId} from '../data/systems.js';
 import {atmosphereFor} from '../data/atmospheres.js';
 import { solidTexture,proceduralTexture } from './textures.js';
 import { AtmosphericPass } from './atmosphere.js';
-import { shapeFactor } from '../data/shapes.js';
+import { shapeFactor,canLand } from '../data/shapes.js';
+import {isGasGiant} from '../data/surfaces.js';
 import { LandingTerrain } from './landing.js';
 
 export const KM_PER_UNIT=1000;
@@ -74,13 +75,14 @@ export class Universe {
       const airColor=new THREE.Color(b.id==='mars'?'#d78858':b.id==='venus'||b.id==='titan'?'#eeb972':b.id==='saturn'?'#d4bd8d':b.id==='jupiter'?'#ccb596':b.id==='uranus'?'#8ccad2':'#429bff');
       const hasAir=!!atmosphereFor(b);
       const uniforms={
+        cloudBoundary:{value:1},oceanWorld:{value:b.surfaceType==='ocean'?1:0},
         stellarTint:{value:new THREE.Color(b.id==='sun'?'#ffffff':isStar(b)?b.color:'#ffffff')},stellarBlend:{value:isStar(b)&&b.id!=='sun'?1:0},
         detailCenter:{value:new THREE.Vector3(0,1,0)},detailCut:{value:-1},
         dayMap:{value:this.textures.get(b.texture||b.id)},nightMap:{value:b.id==='earth'?this.textures.get('2k_earth_nightmap.jpg'):black},
         normalMap:{value:b.id==='earth'?this.textures.get('earth-normal.png'):normal},specMap:{value:b.id==='earth'?this.textures.get('earth-specular.png'):black},
         sunDirection:{value:new THREE.Vector3(1,0,0)},atmosphereColor:{value:airColor},
         hasNight:{value:b.id==='earth'?1:0},hasNormal:{value:b.id==='earth'?1:0},
-        hasSpecular:{value:b.id==='earth'?1:0},hasAtmosphere:{value:hasAir?1:0},
+        hasSpecular:{value:b.id==='earth'||b.surfaceType==='ocean'?1:0},hasAtmosphere:{value:hasAir?1:0},
         time:{value:0},radius:{value:1},ringOuter:{value:b.id==='saturn'?2.35:b.id==='uranus'?2:0},
         ringNormal:{value:new THREE.Vector3(0,1,0)},center:{value:new THREE.Vector3()},
         shadowEnabled:{value:this.settings.shadows?1:0},occluder:{value:new THREE.Vector3()},occluderRadius:{value:0},
@@ -97,7 +99,7 @@ export class Universe {
         atmosphere.scale.setScalar(isStar(b)?1.16:b.id==='venus'||b.id==='titan'?1.055:1.025);
         spin.add(atmosphere);node.atmosphere=atmosphere;
       }
-      if(b.id==='earth'){
+      if(b.id==='earth'||b.surfaceType==='ocean'){
         node.clouds=new THREE.Mesh(geo,material(cloudFragment,{
           cloudMap:{value:this.textures.get('2k_earth_clouds.jpg')},sunDirection:uniforms.sunDirection,
         },{transparent:true,depthWrite:false}));
@@ -146,7 +148,7 @@ export class Universe {
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(this.starIds.length*3),3));
     geo.setAttribute('color',new THREE.Float32BufferAttribute(this.starIds.flatMap(id=>new THREE.Color(this.nodes.get(id).body.color).toArray()),3));
     geo.setAttribute('size',new THREE.Float32BufferAttribute(new Float32Array(this.starIds.length),1));
-    const mat=new THREE.ShaderMaterial({vertexColors:true,transparent:true,depthWrite:false,
+    const mat=new THREE.ShaderMaterial({vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
       vertexShader:`#include <common>
 #include <logdepthbuf_pars_vertex>
 attribute float size;varying vec3 c;void main(){c=color;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1);gl_PointSize=size;
@@ -156,7 +158,9 @@ attribute float size;varying vec3 c;void main(){c=color;gl_Position=projectionMa
 #include <logdepthbuf_pars_fragment>
 varying vec3 c;void main(){
 #include <logdepthbuf_fragment>
-float d=length(gl_PointCoord-.5);if(d>.5)discard;gl_FragColor=vec4(c*2.0,smoothstep(.5,.05,d));}`});
+float d=length(gl_PointCoord-.5);if(d>.5)discard;
+float core=exp(-d*d*180.0),halo=exp(-d*d*22.0)*.25;
+gl_FragColor=vec4(mix(c,vec3(1.0),.45)*5.0,core+halo);}`});
     this.nearbyStars=new THREE.Points(geo,mat);this.nearbyStars.frustumCulled=false;this.scene.add(this.nearbyStars);
   }
   radius(id) {
@@ -233,7 +237,30 @@ float d=length(gl_PointCoord-.5);if(d>.5)discard;gl_FragColor=vec4(c*2.0,smooths
       if(node.atmosphere)node.atmosphere.visible=node.mesh.visible;
       node.group.position.fromArray(this.renderPositions[b.id]).sub(origin);
       const radius=this.radius(b.id);node.group.scale.setScalar(radius);node.radius=radius;
-      node.mesh.geometry=node.group.position.length()<radius*1.15?node.shapeHigh:node.shapeLow;
+      const distance=node.group.position.length();
+      // Generate elevation meshes only for bodies large enough to resolve on screen.
+      // Release them on departure; distant bodies share inexpensive spheres.
+      if(canLand(b)&&radius/Math.max(radius,distance)>.015){
+        const resolution=distance<radius*1.6?384:128;
+        if(node.terrainResolution!==resolution){
+          node.terrainGeometry?.dispose();
+          const geometry=new THREE.SphereGeometry(1,resolution,resolution/2),p=geometry.attributes.position;
+          for(let i=0;i<p.count;i++){
+            const d=new THREE.Vector3(p.getX(i),p.getY(i),p.getZ(i)).normalize();
+            const sample=this.landing.sample(b,d),scale=shapeFactor(b,d.toArray())+sample.mountain/(b.radius*1000);
+            p.setXYZ(i,d.x*scale,d.y*scale,d.z*scale);
+          }
+          geometry.computeVertexNormals();node.terrainGeometry=geometry;node.terrainResolution=resolution;
+        }
+        node.mesh.geometry=node.terrainGeometry;
+      }else{
+        node.mesh.geometry=distance<radius*1.15?node.shapeHigh:node.shapeLow;
+        if(node.terrainGeometry){node.terrainGeometry.dispose();node.terrainGeometry=null;node.terrainResolution=0;}
+      }
+      // Cloud tops are a volume boundary, never a solid floor. Fade them before
+      // entry; the atmospheric integration supplies the opaque interior instead.
+      node.uniforms.cloudBoundary.value=isGasGiant(b)?THREE.MathUtils.smoothstep((distance-radius)/(radius/(b.radius*1000)),0,100000):1;
+      if(isGasGiant(b)&&distance<radius)node.mesh.visible=false;
       node.mesh.rotation.y=((jd-J2000)/(Math.abs(b.rotation)||1)*Math.PI*2)%(Math.PI*2);
       if(node.clouds)node.clouds.rotation.y=node.mesh.rotation.y+((jd-J2000)/7.5*Math.PI*2)%(Math.PI*2);
       node.uniforms.radius.value=radius;node.uniforms.center.value.copy(node.group.position);
@@ -271,7 +298,7 @@ float d=length(gl_PointCoord-.5);if(d>.5)discard;gl_FragColor=vec4(c*2.0,smooths
       const n=this.nodes.get(this.starIds[i]),p=n.group.position,d=p.length(),ly=d*KM_PER_UNIT/9.4607304725808e12;
       starPositions.setXYZ(i,p.x,p.y,p.z);
       const luminosity=n.body.id==='sun'?1:n.body.catalogLuminosity||.00001;
-      starSizes.setX(i,n.radius/Math.max(d,n.radius)>.002?0:THREE.MathUtils.clamp(3.5-Math.log10(Math.max(.001,ly))*.7+Math.log10(luminosity)*.35,1.5,8)*this.renderer.getPixelRatio());
+      starSizes.setX(i,n.radius/Math.max(d,n.radius)>.002?0:THREE.MathUtils.clamp(12-Math.log10(Math.max(.001,ly))*1.2+Math.log10(luminosity)*.65,8,20)*this.renderer.getPixelRatio());
     }
     starPositions.needsUpdate=true;starSizes.needsUpdate=true;
     this.landing.update(flight,time);

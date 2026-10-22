@@ -1,4 +1,5 @@
 export const GAS_GIANTS = new Set(['jupiter','saturn','uranus','neptune']);
+export const isGasGiant=body=>!!body&&(body.surfaceType==='gas'||GAS_GIANTS.has(body.id));
 export const GROUND_TEXTURES = ['grass','sand','rock','ice'].flatMap(type=>
   ['color','normal','rough'].map(map=>`ground-${type}-${map}.jpg`));
 const ice = {type:'ice',title:'Fractured water ice',tint:'#b4c4ce',relief:22,air:0};
@@ -68,4 +69,19 @@ export function terrainHeight(x,z,profile,seed) {
   }
   return broad+fine;
 }
-export function terrainExtent(body) {return Math.min(24000,body.radius*1000*.2);}
+// Continuous body-fixed ranges at geological scales. These are reconstructions,
+// not surveyed elevation data. The same field drives globe, tiles and collisions.
+export function mountainHeight(body,direction,biome){
+  if(isGasGiant(body)||body.isStar||body.id==='sun'||biome==='water')return 0;
+  let [x,y,z]=direction;const length=Math.hypot(x,y,z)||1,R=body.radius*1000;
+  x=x/length*R;y=y/length*R;z=z/length*R;
+  const seed=seedFor(body.id),scale=Math.min(90000,R*.14);
+  const field=(s,k)=>(noise2(x/s,y/s,seed+k)+noise2(y/s,z/s,seed+k+71)+noise2(z/s,x/s,seed+k+133))/3;
+  const region=Math.max(0,Math.min(1,(field(scale*4,21)-.32)*3));
+  const ridge=(1-Math.abs(field(scale*.12,53)*2-1))**9;
+  const fine=(1-Math.abs(field(scale*.035,99)*2-1))**5;
+  let peak=body.id==='mars'?18000:body.id==='earth'?6800:body.surfaceType==='ocean'?7000:body.procedural==='ice'?4000:6500;
+  if(biome==='sand')peak*=.025;
+  return Math.min(peak,R*.012)*region*(ridge*.82+fine*.18);
+}
+export function terrainExtent(body) {return Math.min(64000,body.radius*1000*.2);}

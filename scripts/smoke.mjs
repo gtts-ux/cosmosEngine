@@ -71,7 +71,7 @@ try {
   }
   checks.push('Automatic free-flight surfaces: mapped Earth ocean, Sahara sand, vegetation, ice; Moon, Mars, Europa and Pluto');
   // Start above the visibility threshold and descend using thrust alone.
-  await page.evaluate(()=>window.__cosmos.place('earth',0,-140,12000,true));
+  await page.evaluate(()=>window.__cosmos.place('earth',0,-140,30000,true));
   await page.waitForTimeout(200);assert.equal((await state()).landing.visible,false);
   await page.locator('#speed-slider').fill('3.5');await page.locator('#speed-slider').evaluate(el=>el.blur());
   await page.keyboard.down('w');
@@ -141,7 +141,7 @@ try {
   assert.ok((await state()).texturesRepaired.some(t=>t.name==='triton-usgs.jpg'&&t.pixels>0));
   for(const id of ['deimos','phobos','pan','atlas','amalthea'])assert.ok((await state()).irregularBodies.includes(id));
   checks.push('Missing spacecraft coverage is repaired and small moons use irregular geometry');
-  for(const [altitude,level] of [[6800,'regional'],[3000,'regional'],[100,'local']]){
+  for(const [altitude,level] of [[18000,'regional'],[7000,'regional'],[100,'local']]){
     await page.evaluate(alt=>window.__cosmos.place('earth',23,13,alt),altitude);
     await page.waitForFunction(level=>{const d=window.__cosmos.diagnostics();return d.landing.visible&&d.landing.detailLevel===level;},level);
     assert.equal((await state()).landing.detailLevel,level);

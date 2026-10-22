@@ -2,7 +2,7 @@
 
 An offline Mac explorer with the Solar System, nearby stars, procedural planets, free flight and detailed landing environments.
 
-**Download:** [Intel Mac installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.4.0-x64.dmg) · [Apple Silicon installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.4.0-arm64.dmg) · [All releases](https://github.com/gtts-ux/cosmosEngine/releases)
+**Download:** [Intel Mac installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.5.0-x64.dmg) · [Apple Silicon installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.5.0-arm64.dmg) · [All releases](https://github.com/gtts-ux/cosmosEngine/releases)
 
 Open the DMG and drag CosmosEngine-Mac into Applications. Requires macOS 12+ and WebGL 2. The installed app needs no Node.js, browser, server, or internet connection.
 
@@ -10,7 +10,7 @@ Builds use local ad-hoc signatures and are not Apple Developer ID notarized. If 
 
 ## Nearby stars and generated systems
 
-The catalog includes **55 nearby stars in addition to the Sun**, including Proxima Centauri, Alpha Centauri A, Barnard’s Star, Sirius, Tau Ceti and Epsilon Eridani. Their approximate J2000 positions and distances come from the HYG v4.1 catalog. The neighborhood view shows actual catalog positions rather than placing these stars randomly in the background.
+The catalog includes **55 nearby stars in addition to the Sun**, including Proxima Centauri, Alpha Centauri A, Barnard’s Star, Sirius, Tau Ceti and Epsilon Eridani. Their approximate J2000 positions and distances come from the HYG v4.1 catalog. The neighborhood view shows catalog positions. Nearby stars have bright colored cores and glow so they remain visible against the distant background; their minimum screen size is a visibility aid, not a physical angular diameter.
 
 - Choose the **Stars** tab, use search, or select a system from **Browse system**. Inspecting a star changes the sidebar to its system without moving the camera.
 - Click **Go to** or press G to travel. The current-system label follows your physical location; free flight between systems switches the catalog on arrival.
@@ -18,11 +18,13 @@ The catalog includes **55 nearby stars in addition to the Sun**, including Proxi
 - On an empty extrasolar system, **Seed system** creates four fictional planets. Existing planetary systems are preserved; you can add individual worlds.
 - Generated worlds use deterministic textures, approximate physical properties and Keplerian orbits around their own host star. Solid worlds have automatic local terrain and landing; generated gas giants reject landing.
 - Generated recipes are saved atomically under the app’s user-data directory in `worlds.json` and restored on restart. Up to 16 generated planets per host and 256 total are supported.
-- **⤢ Stars** opens a neighborhood overview. The large system heading opens that system’s planetary overview.
+- **⤢ Star map** opens a neighborhood overview. The large system heading opens that system’s planetary overview.
 
 The star catalog contains primary entries only; binary companions, proper motion and stellar orbital motion are not simulated. Stellar mass/radius/luminosity are spectral estimates. Extrasolar planet discoveries are not bundled: planets created here are labelled **Generated**, are fictional, and are separate from the measured star positions. The catalog snapshot is not a complete or current census of nearby stars. The derived stellar table is licensed under CC BY-SA 4.0; see [DATA-LICENSE.md](DATA-LICENSE.md).
 
 System-local CPU coordinates and a camera-relative GPU origin keep ground movement precise after interstellar travel. Planet illumination follows the host star, and only the nearby system’s planetary geometry/orbits are shown.
+
+Generated maps use 2K albedo with multiscale mineral detail, irregular coastlines, shallow/deep oceans and polar frost. Ocean worlds also have independent cloud layers and water specular highlights. Existing spacecraft/global maps are preserved.
 
 ## Landing environments
 
@@ -31,11 +33,11 @@ Fly toward any planet, moon, asteroid, or dwarf planet: local detail loads autom
 - **Earth:** ocean, vegetation, desert/sand, exposed rock, and snow/ice are classified from the installed global albedo map at your actual latitude/longitude. Coastlines follow that map. Manual random biome presets have been removed.
 - **Other solid worlds:** color follows each world's global map, with regolith, iron-rich dust, sulfur, frost, or ice detail appropriate to that body. Lunar rock detail is neutral gray; the photographed rocky material's moss colors are removed.
 - **All catalog worlds:** detailed patches recenter as you move, and their body-fixed relief repeats at the same coordinates. The globe remains visible beyond the patch. Nearby free flight follows orbital translation and spin, including accelerated simulation time.
-- **Gas and ice giants:** no landing button, surface scene, or keyboard landing. The Sun also rejects landing. Free flight can approach their opaque atmospheres.
+- **Gas and ice giants:** no landing button, surface scene, or keyboard landing. The Sun also rejects landing. Free flight passes through cloud tops and into their opaque atmospheres, with moving cloud haze and deeper darkness; there is no solid floor.
 
-Orbital albedo blends into regional material detail and then close-up normals/roughness as you approach. Relief also fades in gradually, keeping the same globe image as the color source at every level.
+Orbital albedo blends into regional material detail and then close-up normals/roughness as you approach. Large mountain ranges share a continuous body-fixed elevation model across globe meshes, ground tiles and collisions. Fine relief fades in gradually, keeping the same globe image as the color source at every level. Patches extend up to 64 km and recenter during flight.
 
-Regional colors and Earth material selection follow available global imagery, whose resolution limits coastlines and biome accuracy. Small relief/craters and fine material detail are reconstructed, not surveyed elevation, satellite land-cover data, buildings, or photogrammetry. Worlds without spacecraft maps still use illustrative global maps. The camera stays above the rendered terrain; ocean views remain above water.
+Regional colors and Earth material selection follow available global imagery, whose resolution limits coastlines and biome accuracy. Mountains, small relief/craters and fine material detail are reconstructed, not surveyed elevation, satellite land-cover data, buildings, or photogrammetry. Worlds without spacecraft maps still use illustrative global maps. The camera stays above the rendered terrain; ocean views remain above water.
 
 ## Catalog
 
@@ -92,6 +94,7 @@ The first build downloads the licensed assets listed in `assets/manifest.json`, 
 npm test                 # Orbital, clock, settings, and terrain tests
 npm run test:app         # Real Electron rendering and interaction checks
 npm run test:systems     # Generation, interstellar travel and persistence checks
+npm run test:visual      # Rendered star pixels, mountains and giant entry/exit
 npm run pack             # Intel .app
 npm run dist             # Intel and Apple Silicon DMGs, sequentially
 npm run dist:intel

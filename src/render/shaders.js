@@ -19,7 +19,7 @@ export const surfaceFragment = /* glsl */`
   uniform sampler2D dayMap, nightMap, normalMap, specMap;
   uniform vec3 detailCenter;uniform float detailCut;
   uniform vec3 sunDirection, atmosphereColor, ringNormal, center, occluder;
-  uniform float hasNight, hasNormal, hasSpecular, hasAtmosphere, radius, ringOuter, shadowEnabled, occluderRadius;
+  uniform float hasNight, hasNormal, hasSpecular, hasAtmosphere, radius, ringOuter, shadowEnabled, occluderRadius,cloudBoundary,oceanWorld;
   varying vec2 vUv;
   varying vec3 vNormal, vPoint, vLocal;
   vec3 mappedNormal(vec3 n) {
@@ -34,6 +34,9 @@ export const surfaceFragment = /* glsl */`
   }
   void main() {
     #include <logdepthbuf_fragment>
+    // Screen-door dissolve preserves scene depth outside the covered samples.
+    float threshold=fract(52.9829189*fract(dot(floor(gl_FragCoord.xy),vec2(.06711056,.00583715))));
+    if(cloudBoundary<threshold)discard;
     if(detailCut>0.0&&dot(normalize(vLocal),detailCenter)>detailCut)discard;
     vec3 geometric=normalize(vNormal);
     vec3 n=hasNormal>0.5?mappedNormal(geometric):geometric;
@@ -60,7 +63,8 @@ export const surfaceFragment = /* glsl */`
     float night=(1.0-smoothstep(-0.12,0.12,dot(geometric,L)));
     color+=texture2D(nightMap,vUv).rgb*night*hasNight*2.2;
     float spec=pow(max(dot(reflect(-L,n),V),0.0),75.0);
-    color+=vec3(1.0,.94,.84)*spec*texture2D(specMap,vUv).r*hasSpecular*light*.8*shadow;
+    float ocean=oceanWorld>.5?step(day.r*1.8,day.b)*step(day.g*1.05,day.b):texture2D(specMap,vUv).r;
+    color+=vec3(1.0,.94,.84)*spec*ocean*hasSpecular*light*.8*shadow;
     float rim=pow(1.0-max(dot(geometric,V),0.0),3.5);
     color+=atmosphereColor*rim*pow(max(dot(geometric,L)+.2,0.0),.7)*hasAtmosphere*.5;
     gl_FragColor=vec4(color,1.0);

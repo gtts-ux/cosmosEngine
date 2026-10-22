@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {noise2,seedFor} from '../data/surfaces.js';
 export function proceduralTexture(body) {
-  const w=body.generated?512:1024,h=w/2,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+  const w=body.generated?2048:1024,h=w/2,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
   const ctx=canvas.getContext('2d'),image=ctx.createImageData(w,h);
   const base=new THREE.Color(body.color).getRGB({},THREE.SRGBColorSpace),seed=seedFor(body.id);
   const craters=Array.from({length:32},(_,i)=>{
@@ -16,21 +16,40 @@ export function proceduralTexture(body) {
       const warp=noise2(Y*scale,Z*scale,seed+3)-.5;
       f+=(noise2(X*scale+warp,Z*scale+Y*scale*.7,seed)-.5)*amplitude;
     }
-    for(const c of craters){
+    for(const c of (body.surfaceType==='gas'?[]:craters)){
       const distance2=2-2*(X*c.x+Y*c.y+Z*c.z);
       if(distance2>(c.size*1.2)**2)continue;
       const d=Math.sqrt(Math.max(0,distance2))/c.size;
       if(d<1.2)f+=-.19*Math.max(0,1-d*d)+.1*Math.exp(-(((d-1)*12)**2));
     }
     if(body.procedural==='ice')f+=.08;
-    if(body.generated&&body.surfaceType==='gas')f=.8+.09*Math.sin(Y*44+noise2(X*4,Z*4,seed)*3)+(f-.76)*.25;
+    if(body.generated&&body.surfaceType==='gas'){
+      const curl=noise2(X*12+Y*3,Z*12,seed+29),bands=Math.sin(Y*65+curl*4+Math.sin(Z*7)*.5);
+      f=.88+bands*.14+(noise2(X*170,Y*170+Z*90,seed+18)-.5)*.07;
+    }
     if(body.generated&&body.surfaceType==='ocean'){
-      const continent=noise2(X*3+noise2(Y*4,Z*4,seed+5),Z*3+Y*2,seed+17);
-      const rgb=Math.abs(Y)>.87?[235,243,248]:continent<.5?[12,42,110]:continent<.53?[195,172,112]:[58,98,49];
-      const shade=.9+(f-.76)*.25;for(let c=0;c<3;c++)image.data[i+c]=rgb[c]*shade;
+      const continent=noise2(X*3+noise2(Y*4,Z*4,seed+5),Z*3+Y*2,seed+17)*.8+noise2(X*17+Y*4,Z*17,seed+71)*.14+noise2(X*67+Y*13,Z*67,seed+91)*.06;
+      const detail=noise2(X*180+Y*33,Z*180,seed+31),aridity=noise2(X*9+Y*4,Z*9,seed+44);
+      const mixRGB=(a,b,t)=>a.map((c,k)=>c+(b[k]-c)*Math.max(0,Math.min(1,t)));
+      let rgb;
+      if(continent<.5){
+        rgb=mixRGB([8,24,56],[29,112,134],Math.pow(Math.max(0,(continent-.25)/.25),4));
+      }else{
+        const inland=Math.min(1,(continent-.5)/.025);
+        const vegetation=mixRGB([37,61,34],[99,106,61],aridity);
+        rgb=mixRGB([178,163,121],vegetation,inland);
+        const snow=Math.max(0,(Math.abs(Y)+noise2(X*13,Z*13,seed+81)*.07-.84)/.09);
+        rgb=mixRGB(rgb,[222,232,234],snow);
+      }
+      const shade=.93+(f-.76)*.4+(detail-.5)*.11;
+      for(let c=0;c<3;c++)image.data[i+c]=rgb[c]*shade;
       image.data[i+3]=255;continue;
     }
-    image.data[i]=Math.min(245,base.r*255*f);image.data[i+1]=Math.min(245,base.g*255*f);image.data[i+2]=Math.min(245,base.b*255*f);image.data[i+3]=255;
+    // Mineral variation and fractured frost at several scales, retaining each
+    // body's characteristic palette instead of uniformly tinting the whole globe.
+    const mineral=noise2(X*23+Y*7,Z*23,seed+301)-.5;
+    if(body.procedural==='ice')f+=Math.pow(1-Math.abs(Math.sin(X*46+Y*29+noise2(Y*8,Z*8,seed)*4)),30)*-.09;
+    image.data[i]=Math.min(245,base.r*255*(f+mineral*.1));image.data[i+1]=Math.min(245,base.g*255*f);image.data[i+2]=Math.min(245,base.b*255*f);image.data[i+3]=255;
   }
   ctx.putImageData(image,0,0);
   const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=THREE.RepeatWrapping;return t;
