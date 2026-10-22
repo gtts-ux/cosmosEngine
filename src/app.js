@@ -41,7 +41,7 @@ function ensureSystem(star){
  if(!star||star.blackHole)return;
  let added=[];
  if(!byId[star.id])added.push(star);
- if(star.streamedStar&&!catalog.some(b=>b.parent===star.id))added.push(...populateWorlds([{...star,streamedStar:false}]));
+ if(star.streamedStar&&!catalog.some(b=>b.parent===star.id&&b.automatic))added.push(...populateWorlds([{...star,streamedStar:false}]).filter(b=>!byId[b.id]));
  if(added.length){catalog.push(...added);for(const b of added)byId[b.id]=b;universe.addBodies(added);universe.rebuildStarPoints();universe.updatePositions(clock.jd);createLabels();buildSystemPicker();}
  if(star.streamedStar)streamedSystems.set(star.id,performance.now());
  // Keep at most three generated sector systems, plus any inspected/current targets.

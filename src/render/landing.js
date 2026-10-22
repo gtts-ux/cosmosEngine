@@ -86,15 +86,16 @@ export class LandingTerrain {
   async prepare(body,direction){
     if(!canLand(body))return;
     if(this.loadingBody===body.id)return;
-    if(this.ready&&this.body?.id===body.id&&this.anchor.angleTo(direction)*body.radius*1000<this.extent*.18)return;
+    if(this.ready&&this.body?.id===body.id&&this.globeResolution===(this.universe.nodes.get(body.id).terrainResolution||256)&&this.anchor.angleTo(direction)*body.radius*1000<this.extent*.18)return;
     const serial=++this.serial;this.loadingBody=body.id;this.error=null;
     try{
       const maps=await this.loadMaps();await this.universe.ensureTexture(body,2048);if(serial!==this.serial)return;
       const anchor=direction.clone().normalize(),extent=terrainExtent(body),segments=this.universe.settings.quality==='high'?192:128;
-      const data=await this.universe.jobs.run('terrain',{body,direction:anchor.toArray(),extent,segments,atlas:this.atlas.pixels(body)});
+      const globeResolution=this.universe.nodes.get(body.id).terrainResolution||256;
+      const data=await this.universe.jobs.run('terrain',{body,direction:anchor.toArray(),extent,segments,globeSegments:globeResolution,atlas:this.atlas.pixels(body)});
       if(serial!==this.serial)return;
       // Keep the previous tile visible until its replacement is ready.
-      this.clearGeometry();this.body=body;this.anchor=anchor;this.extent=extent;this.segments=segments;this.radiusMeters=body.radius*1000;
+      this.clearGeometry();this.globeResolution=globeResolution;this.body=body;this.anchor=anchor;this.extent=extent;this.segments=segments;this.radiusMeters=body.radius*1000;
       this.frame=new THREE.Quaternion().setFromUnitVectors(upAxis,anchor);this.profile=this.sample(body,anchor).profile;
       const geo=this.universe.jobs.geometry(data),materials=[];
       this.detailUniforms={...this.universe.nodes.get(body.id).uniforms,terrainBlend:{value:0},metersToUnits:{value:1},
