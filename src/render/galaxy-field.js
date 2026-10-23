@@ -16,9 +16,12 @@ export class GalaxyField{
    const disk=points(p,c,s);disk.frustumCulled=false;universe.scene.add(disk);
    const haze=new THREE.Mesh(new THREE.PlaneGeometry(g.radius*2,g.radius*2),new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,
     uniforms:{arms:{value:g.arms}},vertexShader:'varying vec2 uvDisk;void main(){uvDisk=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-    fragmentShader:`varying vec2 uvDisk;uniform float arms;void main(){vec2 p=(uvDisk-.5)*2.0;float r=length(p);if(r>1.0)discard;
+    fragmentShader:`varying vec2 uvDisk;uniform float arms;
+     float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+     float dust(vec2 p){vec2 cell=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(cell),hash(cell+vec2(1,0)),f.x),mix(hash(cell+vec2(0,1)),hash(cell+vec2(1,1)),f.x),f.y);}
+     void main(){vec2 p=(uvDisk-.5)*2.0;float r=length(p);if(r>1.0)discard;
      float a=atan(p.y,p.x),phase=arms*(a-log(1.0+r*30.0)*2.5),band=pow(.5+.5*cos(phase),7.0);
-     float grain=.85+.15*sin(p.x*183.0+sin(p.y*47.0))*sin(p.y*161.0);
+     float grain=.65+.25*dust(p*24.0)+.10*dust(p*57.0);
      float disk=exp(-r*3.5)*(.15+band*.65)*grain*(1.0-smoothstep(.7,1.0,r)),core=exp(-r*24.0)*.9;
      vec3 color=mix(vec3(.28,.42,.75),vec3(1.0,.72,.39),exp(-r*8.0));gl_FragColor=vec4(color,disk+core);}` }));
    haze.rotation.x=g.tilt-Math.PI/2;haze.frustumCulled=false;universe.scene.add(haze);this.disks.push({g,disk,haze});
