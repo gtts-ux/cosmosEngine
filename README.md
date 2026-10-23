@@ -15,20 +15,20 @@ The catalog includes **256 nearby stars in addition to the Sun**, including Prox
 - Choose the **Stars** tab, use search, or select a system from **Browse system**. Inspecting a star changes the sidebar to its system without moving the camera.
 - Click **Go to** or press G to travel. The current-system label follows your physical location; free flight between systems switches the catalog on arrival.
 - Click **＋ Planet** to create a world around the system you are browsing. Choose a name, random/rocky/ocean/ice/gas type and an optional seed. Click Go to after creating it.
-- Every nearby star already has four deterministic fictional planets. Stable moons are added where their orbits fit within the planet’s approximate Hill sphere. No separate system-generation step is needed. Existing custom planets keep their saved recipes and replace only occupied default slots.
+- Nearby stars acquire four deterministic fictional planets automatically when approached or inspected. The original 55 systems have their lightweight catalogs populated at startup. Stable moons are added where their orbits fit within the planet’s approximate Hill sphere. Existing custom planets keep their saved recipes and replace only occupied default slots.
 - Generated worlds use deterministic textures, approximate physical properties and Keplerian orbits around their own host star. Solid worlds have automatic local terrain and landing; generated gas giants reject landing.
 - Custom recipes are saved atomically under the app’s user-data directory in `worlds.json` and restored on restart. Automatic systems are regenerated from stable seeds. The custom save limit is 256 planets; each extrasolar host has 16 total planet slots including its four default slots. Moons do not consume planet slots.
 - **⤢ Star map** opens a neighborhood overview. The large system heading opens that system’s planetary overview.
 
 The star catalog contains primary entries only; binary companions, proper motion and stellar orbital motion are not simulated. Stellar mass/radius/luminosity are spectral estimates. Extrasolar planet discoveries are not bundled: planets created here are labelled **Generated**, are fictional, and are separate from the measured star positions. The catalog snapshot is not a complete or current census of nearby stars. The derived stellar table is licensed under CC BY-SA 4.0; see [DATA-LICENSE.md](DATA-LICENSE.md).
 
-System-local coordinates preserve ground movement after interstellar travel. All systems have lightweight catalog data from startup; nearby systems update their orbits while detailed terrain and maps stream automatically in a worker. Distant detail is released after departure. Planet illumination follows the host star. New systems do not require a manual load action.
+System-local coordinates preserve ground movement after interstellar travel. Nearby systems update their orbits while detailed terrain and maps stream automatically in a worker. Additional system catalogs populate on demand, and distant detail is released after departure. Planet illumination follows the host star. New systems do not require a manual load action.
 
 Generated solid-world maps progressively load up to 2K albedo with mineral variation, coastlines, shallow/deep oceans and polar frost. Ocean worlds also have independent cloud layers and water specular highlights. Existing spacecraft/global maps are preserved.
 
 ## Galaxy exploration
 
-Use the galaxy selector, **Galaxy map** and **Enter galaxy** to explore the Milky Way, Andromeda, Triangulum and the Magellanic Clouds. Local fictional stars stream in a 10 / 20 / 50 light-year sphere for Performance / Balanced / High fidelity. Selecting a star opens its system catalog; **Go to** travels there. Newly added real HYG systems and procedural systems acquire planets and moons automatically, with old detailed systems released on departure.
+Expand **Galaxies** in the Explorer, then use the galaxy selector, **Galaxy map** and **Enter galaxy** to explore the Milky Way, Andromeda, Triangulum and the Magellanic Clouds. Local fictional stars stream in a 10 / 20 / 50 light-year sphere for Performance / Balanced / High fidelity. Selecting a star opens its system catalog; **Go to** travels there. Newly added real HYG systems and procedural systems acquire planets and moons automatically, with old detailed systems released on departure.
 
 Sagittarius A* and M31* are searchable black holes with illustrative accretion disks and no landing surface. Galaxy structure and unresolved stars are reconstructions. Earth uses geographically aligned approximate relief, while Mars uses a measured MOLA elevation grid. Fine terrain remains procedural.
 
@@ -51,11 +51,11 @@ Fly toward any planet, moon, asteroid, or dwarf planet: local detail loads autom
 
 Orbital albedo blends into regional material detail and then close-up normals/roughness as you approach. Large mountain ranges share a continuous body-fixed elevation model across globe meshes, ground tiles and collisions. Fine relief fades in gradually. Photographed rock, sand, grass and ice materials use body-fixed triplanar projection, with normal and roughness detail and colors derived from the global map. This reduces stretching and repeated tile patterns while retaining the body’s palette. Patches extend up to 64 km and recenter during flight.
 
-Regional colors and Earth material selection follow available global imagery, whose resolution limits coastlines and biome accuracy. Mountains, small relief/craters and fine material detail are reconstructed, not surveyed elevation, satellite land-cover data, buildings, or photogrammetry. Worlds without spacecraft maps still use illustrative global maps. The camera stays above the rendered terrain; ocean views remain above water.
+Regional colors and Earth material selection follow available global imagery, whose resolution limits coastlines and biome accuracy. Mars uses measured MOLA elevations at 0.25-degree resolution; Earth mountain locations follow GEBCO imagery with approximate heights. Other relief and all fine material detail are reconstructed. Buildings and photogrammetry are not included. Worlds without spacecraft maps use illustrative global maps. The camera stays above the rendered terrain; ocean views remain above water.
 
 ## Catalog
 
-A clean profile contains 560 objects: 105 fixed catalog entries plus 220 fictional extrasolar planets and 235 fictional moons. The fixed entries include the Sun, 256 nearby stars, eight Solar System planets, five dwarf planets, three asteroids and 33 moons. Saved custom worlds and their moons appear in their own host systems.
+A clean profile starts with 763 objects: 308 fixed catalog entries plus 220 fictional extrasolar planets and 235 fictional moons. The fixed entries include the Sun, 256 nearby stars, two black holes, eight Solar System planets, five dwarf planets, three asteroids and 33 moons. Additional systems and local fictional stars stream during exploration. Saved custom worlds and their moons appear in their own host systems.
 
 - Earth: Moon.
 - Mars: Phobos, Deimos.
@@ -111,6 +111,7 @@ npm run test:systems     # Generation, interstellar travel and persistence check
 npm run test:visual      # Rendered star pixels, mountains and giant entry/exit
 npm run test:streaming   # Automatic systems, moons, detail streaming and persistence
 npm run test:updates     # Update UI with isolated download/checksum fixture
+npm run test:polish      # Terrain, galaxies, black holes and bounded streaming
 npm run test:performance # Measured frame timings and CPU profiles
 npm run pack             # Intel .app
 npm run dist             # Intel and Apple Silicon DMGs, sequentially
@@ -118,13 +119,13 @@ npm run dist:intel
 npm run dist:arm
 ```
 
-The desktop tests use separate `.test-profile` and `.systems-test-profile` directories, blocks HTTP/HTTPS requests, and writes screenshots and a JSON report to `test-output`. Set `COSMOS_PACKAGED_PATH` to a packaged executable to run the same test against the `.app`. Only the Intel build has been executed on the development hardware.
+The desktop tests use isolated profile directories, block HTTP/HTTPS requests, and write screenshots and JSON reports to `test-output`. Set `COSMOS_PACKAGED_PATH` to a packaged executable to run tests against the `.app`. Version 1.7 graphics validation runs on an Apple Silicon Mac in GitHub Actions; see [VALIDATION.md](VALIDATION.md) for results and local environment limitations.
 
-The GitHub Actions workflow builds both architectures, verifies the DMGs, and publishes them with SHA-256 checksums under a versioned GitHub Release.
+The GitHub Actions workflow gates packaging on desktop graphics tests, builds both architectures, verifies the DMGs, exercises the packaged Apple Silicon app, and publishes installers with SHA-256 checksums under a versioned GitHub Release.
 
 ## Rendering and science
 
-Electron 44.9.2, Three.js/WebGL 2, modular JavaScript, locally compiled Tailwind CSS, and electron-builder. The renderer uses a camera-relative floating origin and logarithmic depth. CPU positions use double precision with a separate system reference anchor; one render unit equals 1,000 km. Near clip is 1 mm and the far clip is about 10,570 light-years. Free flight has no scene boundary, but content includes the Solar System, 55 catalog stars, generated planetary systems and a decorative galactic background.
+Electron 44.9.2, Three.js/WebGL 2, modular JavaScript, locally compiled Tailwind CSS, and electron-builder. The renderer uses a camera-relative floating origin and logarithmic depth. CPU positions use double precision with a separate system reference anchor; one render unit equals 1,000 km. Near clip is 1 mm. Distant galaxy overviews use bounded camera-relative proxies to avoid GPU precision loss. Free flight has no scene boundary; detailed fictional stars populate inside the configured radius within the five modeled galaxy regions.
 
 Planet positions use [JPL approximate elements and rates](https://ssd.jpl.nasa.gov/planets/approx_pos.html) and a Newton solution of Kepler’s equation. The Earth-Moon barycenter is split by mass ratio. The clock stops at the 1800–2050 model boundary. UTC is used as an approximation to ephemeris time. Light-time, TT/TDB, relativistic, and observer corrections are not applied. Moon, dwarf-planet, and asteroid orbits use simplified mean elements; phases are not precision predictions.
 

@@ -66,6 +66,8 @@
     <aside class="inspector panel">
       <div class="panel-heading flex justify-between items-center"><span class="eyebrow">TARGET TELEMETRY</span><span class="target-dot"></span></div>
       <div class="target-heading flex items-center gap-3"><div id="target-thumb" class="target-thumb"></div><div><h2 id="target-name">Earth</h2><span id="target-kind">Terrestrial planet</span></div></div>
+      <button id="warp" class="primary-button"><span>↗</span> Go to <kbd>G</kbd></button>
+      <div class="flex gap-2 target-actions"><button id="orbit">◎ Lock orbit</button><button id="land">↓ Land</button></div>
       <p id="target-description"></p>
       <div class="metric hero-metric"><span id="distance-label">DISTANCE FROM SUN</span><strong id="target-distance">1.00 <small>AU</small></strong></div>
       <div class="metrics-grid">
@@ -75,8 +77,6 @@
         <div class="metric"><span>ORBITAL PERIOD</span><strong id="target-period"></strong></div>
       </div>
       <div class="atmosphere-info"><span class="eyebrow">ATMOSPHERE</span><p id="target-atmosphere"></p></div>
-      <button id="warp" class="primary-button"><span>↗</span> Go to <kbd>G</kbd></button>
-      <div class="flex gap-2 target-actions"><button id="orbit">◎ Lock orbit</button><button id="land">↓ Land</button></div>
       <div id="target-note" class="target-note">Approximate ephemeris · J2000 frame</div>
     </aside>
     <div class="view-tools flex items-center gap-2">
