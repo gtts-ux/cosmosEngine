@@ -63,10 +63,11 @@ function visitGalaxy(enter=false){
  setFilter('stars');$('scene-title').textContent=g.name;$('scene-context').textContent=enter?'AUTOMATIC LOCAL STAR STREAMING':'GALAXY OVERVIEW';$('scene-subtitle').textContent='Select a star for its system; Go to travels there.';
  toast(enter?`Exploring ${g.name} · ${detailRadius(settings.quality)} ly detail radius`:`${g.name} overview · Enter galaxy to explore individual stars`);
 }
+function starDistance(star){const anchor=star.anchor||[0,0,0];return Math.hypot(...anchor.map((v,i)=>(v-universe.referenceAnchor[i])/KM_PER_UNIT-flight.position.getComponent(i)));}
 function buildBodyList(){
   $('body-list').replaceChildren();
   const members=bodiesInSystem(catalog,browsingSystem);
-  const list=activeFilter==='stars'?[...catalog.filter(isStar),...nearbySectorStars().slice(0,80)]:members.filter(b=>bodyCategory(b)===activeFilter);
+  const list=activeFilter==='stars'?[...catalog.filter(isStar),...nearbySectorStars()].sort((a,b)=>starDistance(a)-starDistance(b)).slice(0,336):members.filter(b=>bodyCategory(b)===activeFilter);
   $('system-name').textContent=systemName(byId[browsingSystem]);$('system-select').value=browsingSystem;
   $('system-status').textContent=browsingSystem===hereSystem?'Current system':'Preview · click Go to';
   document.querySelector('.count').textContent=activeFilter==='stars'?`${list.length} STARS`:`${members.length} BODIES`;
