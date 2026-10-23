@@ -216,7 +216,7 @@ export class Universe {
     const mat=new THREE.ShaderMaterial({vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
       vertexShader:`#include <common>
 #include <logdepthbuf_pars_vertex>
-attribute float size;varying vec3 c;void main(){c=color;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1);gl_PointSize=size;
+attribute float size;varying vec3 c;void main(){c=color;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1);gl_PointSize=max(1.0,size);if(size<.001)gl_Position=vec4(2.0,2.0,2.0,1.0);
 #include <logdepthbuf_vertex>
 }`,
       fragmentShader:`#include <common>
@@ -307,7 +307,7 @@ gl_FragColor=vec4(mix(c,vec3(1.0),.45)*5.0,core+halo);}`});
       node.group.visible=isStar(b)||node.hostId===this.activeSystem;
       node.mesh.visible=this.radius(b.id)/Math.max(this.radius(b.id),new THREE.Vector3(...this.renderPositions[b.id]).distanceTo(origin))>(isStar(b)?.00015:.00008);
       if(node.disk)node.disk.visible=node.mesh.visible;
-      if(node.clouds)node.clouds.visible=true;
+      if(node.clouds)node.clouds.visible=node.mesh.visible;
       if(node.atmosphere)node.atmosphere.visible=node.mesh.visible;
       node.group.position.fromArray(this.renderPositions[b.id]).sub(origin);
       const radius=this.radius(b.id);node.group.scale.setScalar(radius);node.radius=radius;
@@ -366,9 +366,9 @@ gl_FragColor=vec4(mix(c,vec3(1.0),.45)*5.0,core+halo);}`});
     const starPositions=this.nearbyStars.geometry.attributes.position,starSizes=this.nearbyStars.geometry.attributes.size;
     for(let i=0;i<this.starIds.length;i++){
       const n=this.nodes.get(this.starIds[i]),p=n.group.position,d=p.length(),ly=d*KM_PER_UNIT/9.4607304725808e12;
-      starPositions.setXYZ(i,p.x,p.y,p.z);
+      const proxy=1e7/Math.max(1e7,d);starPositions.setXYZ(i,p.x*proxy,p.y*proxy,p.z*proxy);
       const luminosity=n.body.id==='sun'?1:n.body.catalogLuminosity||.00001;
-      starSizes.setX(i,n.radius/Math.max(d,n.radius)>.002?0:THREE.MathUtils.clamp(12-Math.log10(Math.max(.001,ly))*1.2+Math.log10(luminosity)*.65,8,20)*this.renderer.getPixelRatio());
+      starSizes.setX(i,ly>10?0:n.radius/Math.max(d,n.radius)>.002?0:THREE.MathUtils.clamp(12-Math.log10(Math.max(.001,ly))*1.2+Math.log10(luminosity)*.65,8,20)*this.renderer.getPixelRatio());
     }
     starPositions.needsUpdate=true;starSizes.needsUpdate=true;
     this.landing.update(flight,time);
@@ -386,14 +386,14 @@ gl_FragColor=vec4(mix(c,vec3(1.0),.45)*5.0,core+halo);}`});
     const ray=new THREE.Raycaster();ray.setFromCamera(point,this.camera);
     const hits=ray.intersectObjects([...this.nodes.values()].filter(n=>n.group.visible&&n.mesh.visible).map(n=>n.mesh),false);
     let star=null,miss=12;
-    for(const id of this.starIds){const p=this.project(id);if(!p)continue;const d=Math.hypot(p.x-clientX,p.y-clientY);
+    for(const [i,id] of this.starIds.entries()){if(this.nearbyStars.geometry.attributes.size.getX(i)===0)continue;const p=this.project(id);if(!p)continue;const d=Math.hypot(p.x-clientX,p.y-clientY);
       if(d<miss&&(!hits[0]||this.nodes.get(id).group.position.length()<hits[0].distance)){miss=d;star=id;}}
     const sector=!hits.length&&!star?this.galaxyField.pick(clientX,clientY):null;if(sector){this.onApproachStar?.(sector);return sector.id;}
     return star||hits[0]?.object.userData.body.id;
   }
   project(id){
     if(this.airPass.state.transmission<.02&&id!==this.airPass.state.body)return null;
-    const n=this.nodes.get(id);if(!n.group.visible)return null;const v=n.group.position.clone(),forward=new THREE.Vector3(0,0,-1).applyQuaternion(this.camera.quaternion);
+    const n=this.nodes.get(id);if(!n.group.visible||(isStar(n.body)&&!n.body.blackHole&&n.group.position.length()*KM_PER_UNIT>10*9.4607304725808e12))return null;const v=n.group.position.clone(),forward=new THREE.Vector3(0,0,-1).applyQuaternion(this.camera.quaternion);
     if(v.dot(forward)<=0)return null;
     v.project(this.camera);
     if(Math.abs(v.x)>1||Math.abs(v.y)>1)return null;

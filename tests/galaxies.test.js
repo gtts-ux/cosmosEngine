@@ -1,11 +1,19 @@
 import {gunzipSync} from 'node:zlib';
 import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';
-import {GALAXIES,galaxyAt,galaxyWorld,detailRadius,sectorStars,BLACK_HOLES} from '../src/data/galaxies.js';
+import {GALAXIES,galaxyAt,galaxyWorld,detailRadius,sectorStars,starsWithin,BLACK_HOLES} from '../src/data/galaxies.js';
 import {installElevation,surveyHeight} from '../src/data/elevation.js';import {surfaceDirection} from '../src/data/geography.js';import {canLand} from '../src/data/shapes.js';
-test('galaxy sectors stay bounded, deterministic and nested across quality levels',()=>{
- assert.equal(galaxyAt([0,0,0]).id,'milky-way');assert.deepEqual(['low','medium','high'].map(detailRadius),[10,20,50]);
- for(const g of GALAXIES){const p=galaxyWorld(g,[g.radius*.5,0,0]),low=sectorStars(p,10),medium=sectorStars(p,20),high=sectorStars(p,50);assert.ok(low.length>0&&high.length<6000,g.id);assert.ok(high.length>medium.length&&medium.length>low.length);const ids=new Set(high.map(b=>b.id));assert.ok(medium.every(b=>ids.has(b.id)));assert.deepEqual(low,sectorStars(p,10));for(const b of high)assert.ok(Math.hypot(...b.anchor.map((v,i)=>v/9.4607304725808e12-p[i]))<=50.000001);}
- assert.deepEqual(sectorStars([1e8,1e8,1e8],50),[]);
+test('10 ly sectors populate every galaxy, Solar neighborhood and intergalactic space deterministically',()=>{
+ assert.equal(galaxyAt([0,0,0]).id,'milky-way');assert.deepEqual(['low','medium','high'].map(detailRadius),[10,10,10]);
+ const centers=[[0,0,0],[1e8,1e8,1e8],...GALAXIES.map(g=>galaxyWorld(g,[g.radius*.5,0,0]))];
+ for(const p of centers){const stars=sectorStars(p);assert.ok(stars.length>0&&stars.length<100);assert.deepEqual(stars,sectorStars(p));assert.equal(starsWithin(stars,p).length,stars.length);}
+});
+test('moving and crossing galaxy edges preserves shared stars and generates new local stars',()=>{
+ for(const p of [[0,0,0],[1e8,1e8,1e8],galaxyWorld(GALAXIES[1],[GALAXIES[1].radius-2,0,0])]){
+  const next=p.map((v,i)=>v+(i===0?5:0)),a=sectorStars(p),b=sectorStars(next),byId=new Map(b.map(s=>[s.id,s]));
+  const shared=starsWithin(a,next);assert.ok(shared.length>0);for(const star of shared)assert.deepEqual(byId.get(star.id),star);
+  assert.ok(b.some(star=>!a.some(old=>old.id===star.id)));assert.deepEqual(sectorStars(p),a);
+ }
+ assert.deepEqual(sectorStars([Infinity,0,0]),[]);assert.deepEqual(sectorStars([0,0,0],1e9),[]);
 });
 test('black holes have Schwarzschild sizes and no landing surface',()=>{for(const b of BLACK_HOLES){assert.equal(canLand(b),false);assert.ok(Math.abs(b.radius/(b.mass/1.9885e30)-2.95325)<1e-8);}});
 test('Mars MOLA elevations locate Olympus Mons, Hellas and northern plains; Earth relief follows geography',async()=>{

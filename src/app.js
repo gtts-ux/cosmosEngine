@@ -1,4 +1,5 @@
-import {GALAXIES,galaxyWorld,detailRadius} from './data/galaxies.js';
+import {LocalStarMap} from './navigation/star-map.js';
+import {GALAXIES,galaxyWorld,detailRadius,starsWithin} from './data/galaxies.js';
 import {populateWorlds} from './data/world-population.js';
 import {loadElevation} from './data/elevation.js';
 import {isStar,hostStarId,systemName,currentSystem,bodiesInSystem,LIGHT_YEAR_KM} from './data/systems.js';
@@ -12,7 +13,7 @@ import { canLand } from './data/shapes.js';
 const $=id=>document.getElementById(id);
 const thumbnailCache=new Map();
 const format=(n,d=0)=>n.toLocaleString('en-US',{maximumFractionDigits:d});
-let universe,flight,settings,selected='earth',activeFilter='planets',hud=true,lastUI=0,fpsFrames=0,fpsTime=0,lastFrame=performance.now(),elapsed=0,measuredFPS=0;
+let starMap,universe,flight,settings,selected='earth',activeFilter='planets',hud=true,lastUI=0,fpsFrames=0,fpsTime=0,lastFrame=performance.now(),elapsed=0,measuredFPS=0;
 let catalog=[...BODIES],byId={...BY_ID},browsingSystem='sun',hereSystem='sun',generationBusy=false,generationHost='sun';
 const clock=new SimulationClock();
 let toastTimer,saveTimer;
@@ -54,7 +55,7 @@ function ensureSystem(star){
   const removed=new Set(ids);catalog=catalog.filter(b=>!removed.has(b.id));streamedSystems.delete(id);
  }
 }
-function nearbySectorStars(){return universe?.galaxyField.entries.filter(b=>!byId[b.id])||[];}
+function nearbySectorStars(){return universe?.galaxyField.localEntries().filter(b=>!byId[b.id])||[];}
 function visitGalaxy(enter=false){
  const g=GALAXIES.find(g=>g.id===$('galaxy-select').value);flight.free();universe.rebase('sun',flight);flight.target='sun';flight.camera.zoom=1;flight.camera.updateProjectionMatrix();
  const offset=enter?[g.radius*.5,0,0]:[0,g.radius*1.6,g.radius*.8];
@@ -63,11 +64,12 @@ function visitGalaxy(enter=false){
  setFilter('stars');$('scene-title').textContent=g.name;$('scene-context').textContent=enter?'AUTOMATIC LOCAL STAR STREAMING':'GALAXY OVERVIEW';$('scene-subtitle').textContent='Select a star for its system; Go to travels there.';
  toast(enter?`Exploring ${g.name} · ${detailRadius(settings.quality)} ly detail radius`:`${g.name} overview · Enter galaxy to explore individual stars`);
 }
+function localStars(){return starsWithin([...catalog.filter(b=>isStar(b)&&!b.blackHole),...nearbySectorStars()],flight.position.toArray().map((v,i)=>(v*KM_PER_UNIT+universe.referenceAnchor[i])/LIGHT_YEAR_KM));}
 function starDistance(star){const anchor=star.anchor||[0,0,0];return Math.hypot(...anchor.map((v,i)=>(v-universe.referenceAnchor[i])/KM_PER_UNIT-flight.position.getComponent(i)));}
 function buildBodyList(){
   $('body-list').replaceChildren();
   const members=bodiesInSystem(catalog,browsingSystem);
-  const list=activeFilter==='stars'?[...catalog.filter(isStar),...nearbySectorStars()].sort((a,b)=>starDistance(a)-starDistance(b)).slice(0,336):members.filter(b=>bodyCategory(b)===activeFilter);
+  const list=activeFilter==='stars'?localStars().sort((a,b)=>starDistance(a)-starDistance(b)).slice(0,336):members.filter(b=>bodyCategory(b)===activeFilter);
   $('system-name').textContent=systemName(byId[browsingSystem]);$('system-select').value=browsingSystem;
   $('system-status').textContent=browsingSystem===hereSystem?'Current system':'Preview · click Go to';
   document.querySelector('.count').textContent=activeFilter==='stars'?`${list.length} STARS`:`${members.length} BODIES`;
@@ -219,7 +221,8 @@ function attachUI(){
   for(const g of GALAXIES){const option=document.createElement('option');option.value=g.id;option.textContent=g.name;$('galaxy-select').append(option);}
   $('galaxy-map').onclick=()=>visitGalaxy(false);$('galaxy-enter').onclick=()=>visitGalaxy(true);
   $('system-select').onchange=e=>select(e.target.value);
-  $('neighborhood-view').onclick=()=>{setFilter('stars');flight.neighborhood();$('scene-title').textContent='Local Neighborhood';$('scene-context').textContent='256 NEARBY CATALOG STARS / J2000 POSITIONS';$('scene-subtitle').textContent='Select a star to inspect its system. Go to to travel.';toast('Local neighborhood · select a star to inspect its system');};
+  starMap=new LocalStarMap({flight,stars:localStars,travel:id=>{select(id);flight.visit(id);},region:()=>GALAXIES.find(g=>g.id===universe.galaxyField.currentGalaxy)?.name||'Intergalactic space'});
+  $('neighborhood-view').onclick=()=>starMap.open();
   $('generate-planet').onclick=()=>{generationHost=browsingSystem;flight.keys.clear();flight.velocity.set(0,0,0);$('generate-form').reset();$('generate-host').textContent=`Orbiting ${byId[generationHost].name}`;$('generate-dialog').showModal();};
   $('generate-dialog').querySelector('.dialog-close').onclick=()=>$('generate-dialog').close();
   $('generate-form').onsubmit=e=>{e.preventDefault();generateWorlds(generationHost,1,$('generated-type').value,$('generated-name').value,$('generated-seed').value);};
@@ -308,7 +311,7 @@ function frame(now){
     universe.adaptResolution(actualDt,now);universe.updatePositions(clock.jd);flight.update(dt);universe.updateScene(clock.jd,elapsed,flight.position,flight);universe.render();
     fpsFrames++;fpsTime+=actualDt;
     if(now-lastUI>120){
-      timeUI();updateSystemContext();updateTargetDistance();updateLabels();
+      timeUI();updateSystemContext();updateTargetDistance();updateLabels();starMap?.paint();
       $('flight-speed').textContent=flight.mode==='land'?'5 m/s · walking':speedLabel(flight.speed);$('speed-slider').value=flight.speedExponent;
       const terrain=universe.landing;
       $('surface-panel').hidden=!terrain.visible;document.body.classList.toggle('is-land',terrain.visible);
@@ -351,14 +354,17 @@ async function main(){
   $('load-progress').style.width='100%';$('loading').hidden=true;
   window.__cosmos={
     ready:true,
-    diagnostics:()=>({...universe.getDiagnostics(),selected,browsingSystem,currentSystem:hereSystem,visibleCatalog:[...document.querySelectorAll('[data-body]')].map(b=>b.dataset.body),automaticBodies:catalog.filter(b=>b.automatic).length,generatedMoons:catalog.filter(b=>b.generatedMoon).length,generated:catalog.filter(b=>b.generated&&!b.automatic&&!b.generatedMoon).map(b=>({id:b.id,name:b.name,parent:b.parent,surfaceType:b.surfaceType,seed:b.seed})),mode:flight.mode,jd:clock.jd,rate:clock.rate,paused:clock.paused,
+    diagnostics:()=>({...universe.getDiagnostics(),starMap:starMap?.diagnostics(),selected,browsingSystem,currentSystem:hereSystem,visibleCatalog:[...document.querySelectorAll('[data-body]')].map(b=>b.dataset.body),automaticBodies:catalog.filter(b=>b.automatic).length,generatedMoons:catalog.filter(b=>b.generatedMoon).length,generated:catalog.filter(b=>b.generated&&!b.automatic&&!b.generatedMoon).map(b=>({id:b.id,name:b.name,parent:b.parent,surfaceType:b.surfaceType,seed:b.seed})),mode:flight.mode,jd:clock.jd,rate:clock.rate,paused:clock.paused,
       flightTarget:flight.target,sunspotRegions:14,position:flight.position.toArray(),zoom:flight.camera.zoom,effectiveFOV:flight.camera.getEffectiveFOV(),speed:flight.speed,settings:{...settings},warp:!!flight.warp,fps:measuredFPS}),
   };
   if((await window.cosmos.version()).testing){
     window.__cosmos.exploreGalaxy=(id,enter=true)=>{$('galaxy-select').value=id;visitGalaxy(enter);};
+    window.__cosmos.placeSpace=point=>{flight.free();flight.velocity.set(0,0,0);flight.surfaceFrame=null;flight.position.set(...point.map((v,i)=>(v*LIGHT_YEAR_KM-universe.referenceAnchor[i])/KM_PER_UNIT));};
+    window.__cosmos.moveSpace=delta=>{flight.free();flight.velocity.set(0,0,0);flight.surfaceFrame=null;delta.forEach((v,i)=>flight.position.setComponent(i,flight.position.getComponent(i)+v*LIGHT_YEAR_KM/KM_PER_UNIT));};
+    window.__cosmos.skyProbe=(yaw=0,pitch=0)=>{flight.camera.rotation.set(pitch,yaw,0,'YXZ');universe.camera.updateMatrixWorld();universe.render();const gl=universe.renderer.getContext(),w=gl.drawingBufferWidth,h=gl.drawingBufferHeight,pixels=new Uint8Array(w*h*4);gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,pixels);let white=0,maxRun=0;for(let y=0;y<h;y++){let run=0;for(let x=0;x<w;x++){const i=(y*w+x)*4;if(pixels[i]>235&&pixels[i+1]>235&&pixels[i+2]>235){white++;run++;maxRun=Math.max(maxRun,run);}else run=0;}}return {whiteFraction:white/(w*h),longestWhiteRow:maxRun/w};};
     window.__cosmos.selectBody=id=>select(id);
     window.__cosmos.visitBody=id=>{select(id);flight.visit(id,true);};
-    window.__cosmos.sectorProbe=()=>universe.galaxyField.entries.slice(0,20).map(b=>({id:b.id,anchor:b.anchor}));
+    window.__cosmos.sectorProbe=()=>universe.galaxyField.localEntries().slice(0,20).map(b=>({id:b.id,anchor:b.anchor}));
     window.__cosmos.starProbe=()=>{
       const points=universe.starIds.map(id=>({id,p:universe.project(id)})).filter(s=>s.p);
       const gl=universe.renderer.getContext(),ratio=universe.renderer.getPixelRatio();

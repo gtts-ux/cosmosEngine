@@ -113,14 +113,6 @@ export class Flight {
     this.warp={start:this.position.clone(),startQuaternion:this.camera.quaternion.clone(),offset:new THREE.Vector3().setFromSpherical(new THREE.Spherical(this.distance,this.phi,this.theta)),elapsed:0,duration:2.4};
     this.onModeChange('orbit');
   }
-  neighborhood(){
-    this.universe.rebase('sun',this);this.camera.zoom=1;this.camera.updateProjectionMatrix();
-    this.target='sun';this.mode='orbit';this.velocity.set(0,0,0);this.keys.clear();this.surfaceFrame=null;
-    this.theta=.35;this.phi=1.1;const radius=Math.max(...this.universe.bodies.filter(b=>isStar(b)&&!b.blackHole&&!b.fictional).map(b=>Math.hypot(...(b.anchor||[0,0,0]))))/KM_PER_UNIT;
-    this.distance=radius/Math.sin(THREE.MathUtils.degToRad(this.camera.fov/2))*1.2;
-    this.warp={start:this.position.clone(),startQuaternion:this.camera.quaternion.clone(),offset:new THREE.Vector3().setFromSpherical(new THREE.Spherical(this.distance,this.phi,this.theta)),elapsed:0,duration:2.4};
-    this.onModeChange('orbit');
-  }
   landPose(){
     const landing=this.universe.landing,body=this.universe.nodes.get(this.target).body;
     const bodyQ=landing.bodyRotation(this.target),sample=landing.sample(body,this.landLocal);

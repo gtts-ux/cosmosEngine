@@ -7,9 +7,18 @@ export const GALAXIES=[
  {id:'triangulum',name:'Triangulum',center:equatorial(1.564,30.66,2730000),radius:30000,tilt:.7,arms:3,seed:553},
  {id:'lmc',name:'Large Magellanic Cloud',center:equatorial(5.392,-69.756,163000),radius:16000,tilt:.4,arms:1,seed:773},
  {id:'smc',name:'Small Magellanic Cloud',center:equatorial(.879,-72.829,200000),radius:10000,tilt:1.8,arms:1,seed:119},
+ {id:'m81',name:'M81 · Bode’s Galaxy',center:equatorial(9.926,69.067,12000000),radius:45000,tilt:.9,arms:2,seed:811},
+ {id:'m82',name:'M82 · Cigar Galaxy',center:equatorial(9.931,69.679,12000000),radius:19000,tilt:1.5,arms:1,seed:822,shape:'irregular'},
+ {id:'sculptor',name:'Sculptor · NGC 253',center:equatorial(.7925,-25.288,11000000),radius:45000,tilt:1.4,arms:2,seed:253},
+ {id:'centaurus-a',name:'Centaurus A',center:equatorial(13.4243,-43.019,11000000),radius:48000,tilt:.65,arms:2,seed:5128,shape:'elliptical'},
 ];
 GALAXIES[0].tilt=Math.atan2(-GALAXIES[0].center[1],GALAXIES[0].center[2]);
-export const detailRadius=quality=>({low:10,medium:20,high:50}[quality]||20);
+export const LOCAL_RADIUS_LY=10;
+export const detailRadius=()=>LOCAL_RADIUS_LY;
+const INTERGALACTIC={id:'intergalactic',name:'Deep Space'};
+export function starsWithin(stars,position,radius=LOCAL_RADIUS_LY){
+ return stars.filter(b=>Math.hypot(...(b.anchor||[0,0,0]).map((v,i)=>v/LIGHT_YEAR_KM-position[i]))<=radius);
+}
 export function galaxyLocal(g,p){const [x,y,z]=p.map((v,i)=>v-g.center[i]),c=Math.cos(g.tilt),s=Math.sin(g.tilt);return [x,y*c+z*s,-y*s+z*c];}
 export function galaxyWorld(g,[x,y,z]){const c=Math.cos(g.tilt),s=Math.sin(g.tilt);return [x,y*c-z*s,y*s+z*c].map((v,i)=>v+g.center[i]);}
 export function galaxyAt(p){return GALAXIES.find(g=>{const [x,y,z]=galaxyLocal(g,p);return Math.hypot(x,z)<g.radius&&Math.abs(y)<1800;})||null;}
@@ -22,17 +31,17 @@ export function makeSectorStar(g,x,y,z,index,random){
 }
 // Fixed 10 ly cells make positions independent of quality, traversal order and revisits.
 // At most 8 candidates per cell: no galaxy-sized object array is ever allocated.
-export function sectorStars(position,radius){
- const galaxy=galaxyAt(position);if(!galaxy)return [];
+export function sectorStars(position,radius=LOCAL_RADIUS_LY){
+ if(position.length!==3||!position.every(Number.isFinite)||!Number.isFinite(radius)||radius<=0||radius>50)return [];
  const result=[],lo=position.map(v=>Math.floor((v-radius)/10)),hi=position.map(v=>Math.floor((v+radius)/10));
  for(let x=lo[0];x<=hi[0];x++)for(let y=lo[1];y<=hi[1];y++)for(let z=lo[2];z<=hi[2];z++){
+  // Ownership is fixed per cell, so crossing a galaxy boundary cannot reshuffle stars.
+  const galaxy=galaxyAt([x*10+5,y*10+5,z*10+5])||INTERGALACTIC;
   const random=randomSequence(`${galaxy.id}:${x}:${y}:${z}`);
   for(let i=0;i<8;i++){
    const star=makeSectorStar(galaxy,x,y,z,i,random),p=star.anchor.map(v=>v/LIGHT_YEAR_KM);
    if(Math.hypot(...p.map((v,k)=>v-position[k]))>radius)continue;
-   // Preserve the measured neighborhood, without inventing nearby Solar companions.
-   if(galaxy.id==='milky-way'&&Math.hypot(...p)<33)continue;
-   if(galaxyAt(p)?.id===galaxy.id)result.push(star);
+   result.push(star);
   }
  }
  return result;

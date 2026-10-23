@@ -1,11 +1,10 @@
-Galaxy exploration and terrain polish in CosmosEngine-Mac 1.7.0.
+Player-centered exploration in CosmosEngine-Mac 1.8.0.
 
-- Ground tiles share the globe’s lighting and fade across a broad, overlapping opacity mask. Close-up material contrast preserves the planet’s regional palette. Small bodies progressively stream higher-detail procedural maps; microrelief scales down on tiny moons.
-- Mars uses NASA MOLA 0.25-degree measured elevations. Earth uses a NASA GEBCO geographic relief raster with approximate heights. Local rocks and fine surface detail remain procedural reconstructions.
-- Expanded the HYG catalog from 55 to 256 real nearby primary stars. Newly added systems populate when approached or inspected.
-- Explore the Milky Way, Andromeda, Triangulum and both Magellanic Clouds. Galaxy map shows the distant structure; Enter galaxy opens a local neighborhood. Fictional stars generate in fixed sectors within 10 ly on Performance, 20 ly on Balanced and 50 ly on High fidelity. Planetary systems and moons load on approach. Old generated systems are released.
-- Added Sagittarius A* and M31* with Schwarzschild-size horizons and illustrative accretion disks. They cannot be landed on.
+- Fictional stars now stream within 10 light-years of your current position everywhere: near the Sun, inside galaxies, and in intergalactic space. Moving reveals new stars; revisiting restores the same seeded stars. Quality settings retain the same 10 ly range.
+- Star map opens a separate local map centered on you. It no longer flies back to the Sun. Select a point or use the nearby-star list, then Go to selected star to travel to its planets and moons.
+- Replaced flat galaxy haze planes with volumetric point splats, faded overview geometry on entry, and bounded distant-star rendering. These changes address the large white walls seen inside M31.
+- Added M81 (Bode’s Galaxy), M82 (Cigar Galaxy), Sculptor (NGC 253), and Centaurus A: nine galaxy destinations total.
 
-Galaxy structures, procedural stars, planets and moons are reconstructions; catalog stars are labeled separately. Black-hole rendering is an artistic approximation, not general-relativistic ray tracing. Earth’s normalized height raster is not a precision DEM. Mars’s measured grid is approximately 15 km per pixel at the equator; finer detail is illustrative.
+Generated stars, planets, moons and galaxy structures are fictional reconstructions. Intergalactic star density is an exploration feature, not a measured population. Real catalog stars remain labeled separately.
 
-Choose x64 for Intel or arm64 for Apple Silicon. Builds are ad-hoc signed, not notarized. The App updates button downloads and verifies the installer; quit the app and replace it in Applications.
+Choose x64 for Intel or arm64 for Apple Silicon. Builds are ad-hoc signed, not notarized. App updates downloads and verifies the installer; quit the app and replace it in Applications. Saved settings and custom worlds are preserved.

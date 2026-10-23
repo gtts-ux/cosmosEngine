@@ -2,7 +2,7 @@
 
 An offline Mac explorer with the Solar System, nearby stars, procedural planets, free flight and detailed landing environments.
 
-**Download:** [Intel Mac installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.7.0-x64.dmg) · [Apple Silicon installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.7.0-arm64.dmg) · [All releases](https://github.com/gtts-ux/cosmosEngine/releases)
+**Download:** [Intel Mac installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.8.0-x64.dmg) · [Apple Silicon installer](https://github.com/gtts-ux/cosmosEngine/releases/latest/download/CosmosEngine-Mac-1.8.0-arm64.dmg) · [All releases](https://github.com/gtts-ux/cosmosEngine/releases)
 
 Open the DMG and drag CosmosEngine-Mac into Applications. Requires macOS 12+ and WebGL 2. The installed app needs no Node.js, browser, server, or internet connection.
 
@@ -18,7 +18,7 @@ The catalog includes **256 nearby stars in addition to the Sun**, including Prox
 - Nearby stars acquire four deterministic fictional planets automatically when approached or inspected. The original 55 systems have their lightweight catalogs populated at startup. Stable moons are added where their orbits fit within the planet’s approximate Hill sphere. Existing custom planets keep their saved recipes and replace only occupied default slots.
 - Generated worlds use deterministic textures, approximate physical properties and Keplerian orbits around their own host star. Solid worlds have automatic local terrain and landing; generated gas giants reject landing.
 - Custom recipes are saved atomically under the app’s user-data directory in `worlds.json` and restored on restart. Automatic systems are regenerated from stable seeds. The custom save limit is 256 planets; each extrasolar host has 16 total planet slots including its four default slots. Moons do not consume planet slots.
-- **⤢ Star map** opens a neighborhood overview. The large system heading opens that system’s planetary overview.
+- **⤢ Star map** opens a map of stars within 10 light-years of your current position, without moving the flight camera. Click a point or use the star list, then **Go to selected star** to travel. The large system heading opens that system’s planetary overview.
 
 The star catalog contains primary entries only; binary companions, proper motion and stellar orbital motion are not simulated. Stellar mass/radius/luminosity are spectral estimates. Extrasolar planet discoveries are not bundled: planets created here are labelled **Generated**, are fictional, and are separate from the measured star positions. The catalog snapshot is not a complete or current census of nearby stars. The derived stellar table is licensed under CC BY-SA 4.0; see [DATA-LICENSE.md](DATA-LICENSE.md).
 
@@ -28,7 +28,7 @@ Generated solid-world maps progressively load up to 2K albedo with mineral varia
 
 ## Galaxy exploration
 
-Expand **Galaxies** in the Explorer, then use the galaxy selector, **Galaxy map** and **Enter galaxy** to explore the Milky Way, Andromeda, Triangulum and the Magellanic Clouds. Local fictional stars stream in a 10 / 20 / 50 light-year sphere for Performance / Balanced / High fidelity. Selecting a star opens its system catalog; **Go to** travels there. Newly added real HYG systems and procedural systems acquire planets and moons automatically, with old detailed systems released on departure.
+Expand **Galaxies** in the Explorer, then use the galaxy selector, **Galaxy map** and **Enter galaxy** to explore the Milky Way, Andromeda, Triangulum, the Magellanic Clouds, M81, M82, Sculptor and Centaurus A. Local fictional stars stream in a 10-light-year sphere centered on you at every quality setting, including outside galaxies and near the Sun. Nearby real catalog stars coexist with clearly labeled fictional stars. A small worker prefetch margin keeps movement smooth; only stars inside 10 ly appear in the local map and star list. Selecting a star opens its system catalog; **Go to** travels there. Newly added real HYG systems and procedural systems acquire planets and moons automatically, with old detailed systems released on departure.
 
 Sagittarius A* and M31* are searchable black holes with illustrative accretion disks and no landing surface. Galaxy structure and unresolved stars are reconstructions. Earth uses geographically aligned approximate relief, while Mars uses a measured MOLA elevation grid. Fine terrain remains procedural.
 
@@ -119,13 +119,13 @@ npm run dist:intel
 npm run dist:arm
 ```
 
-The desktop tests use isolated profile directories, block HTTP/HTTPS requests, and write screenshots and JSON reports to `test-output`. Set `COSMOS_PACKAGED_PATH` to a packaged executable to run tests against the `.app`. Version 1.7 graphics validation runs on an Apple Silicon Mac in GitHub Actions; see [VALIDATION.md](VALIDATION.md) for results and local environment limitations.
+The desktop tests use isolated profile directories, block HTTP/HTTPS requests, and write screenshots and JSON reports to `test-output`. Set `COSMOS_PACKAGED_PATH` to a packaged executable to run tests against the `.app`. Version 1.8 graphics validation runs on an Apple Silicon Mac in GitHub Actions; see [VALIDATION.md](VALIDATION.md) for results and local environment limitations.
 
 The GitHub Actions workflow gates packaging on desktop graphics tests, builds both architectures, verifies the DMGs, exercises the packaged Apple Silicon app, and publishes installers with SHA-256 checksums under a versioned GitHub Release.
 
 ## Rendering and science
 
-Electron 44.9.2, Three.js/WebGL 2, modular JavaScript, locally compiled Tailwind CSS, and electron-builder. The renderer uses a camera-relative floating origin and logarithmic depth. CPU positions use double precision with a separate system reference anchor; one render unit equals 1,000 km. Near clip is 1 mm. Distant galaxy overviews use bounded camera-relative proxies to avoid GPU precision loss. Free flight has no scene boundary; detailed fictional stars populate inside the configured radius within the five modeled galaxy regions.
+Electron 44.9.2, Three.js/WebGL 2, modular JavaScript, locally compiled Tailwind CSS, and electron-builder. The renderer uses a camera-relative floating origin and logarithmic depth. CPU positions use double precision with a separate system reference anchor; one render unit equals 1,000 km. Near clip is 1 mm. Distant galaxy overviews use bounded camera-relative proxies to avoid GPU precision loss. Free flight has no scene boundary; detailed fictional stars populate within 10 light-years everywhere. Nine named galaxies provide approximate large-scale destinations. Galaxy overview haze uses bounded point clouds that fade out on entry, with no solid haze plane to fly through.
 
 Planet positions use [JPL approximate elements and rates](https://ssd.jpl.nasa.gov/planets/approx_pos.html) and a Newton solution of Kepler’s equation. The Earth-Moon barycenter is split by mass ratio. The clock stops at the 1800–2050 model boundary. UTC is used as an approximation to ephemeris time. Light-time, TT/TDB, relativistic, and observer corrections are not applied. Moon, dwarf-planet, and asteroid orbits use simplified mean elements; phases are not precision predictions.
 
