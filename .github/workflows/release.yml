@@ -61,6 +61,18 @@ jobs:
         run: npx electron-builder --mac dmg --${{ matrix.arch }} --publish never
       - name: Verify installer checksum
         run: hdiutil verify release/*-${{ matrix.arch }}.dmg
+      - name: Exercise packaged Apple Silicon app
+        if: matrix.arch == 'arm64'
+        timeout-minutes: 8
+        env:
+          COSMOS_PACKAGED_PATH: ${{ github.workspace }}/release/mac-arm64/CosmosEngine-Mac.app/Contents/MacOS/CosmosEngine-Mac
+        run: npm run test:polish
+      - uses: actions/upload-artifact@v4
+        if: always() && matrix.arch == 'arm64'
+        with:
+          name: packaged-graphics-validation
+          path: test-output/
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         with:
           name: mac-${{ matrix.arch }}
