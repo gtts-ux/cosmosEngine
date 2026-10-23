@@ -165,7 +165,7 @@
     <p class="modal-note">Fly close to any world to reveal detailed terrain automatically. Materials follow the globe map at your latitude and longitude. Land descends beneath your current position; WASD moves and drag looks around. Shift + scroll adjusts the telescope from 0.5× to 1000×; click its indicator to reset. O returns to orbit. Gas and ice giants have no landable surface.</p>
     <p class="modal-note">Planet orbits use approximate JPL elements for 1800–2050. Moon and asteroid trajectories use simplified mean elements; satellite phases and surface orientations are illustrative. This is an exploration simulator, not a precision ephemeris.</p>
   </dialog>
-  <dialog id="star-map-dialog" aria-labelledby="star-map-title">
+  <dialog id="star-map-dialog" class="modal panel" aria-labelledby="star-map-title">
     <div class="flex justify-between items-center"><h2 id="star-map-title">Stars around you</h2><button class="dialog-close" aria-label="Close star map">×</button></div>
     <p id="star-map-summary"></p>
     <canvas id="star-map-canvas" role="img" aria-label="Projected star map centered on your current position. Choose a star using the list below."></canvas>

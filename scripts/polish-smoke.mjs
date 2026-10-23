@@ -26,6 +26,7 @@ try{
  for(const [yaw,pitch] of [[0,0],[Math.PI/2,0],[Math.PI,0],[-Math.PI/2,0],[0,Math.PI/2],[0,-Math.PI/2]]){
   const sky=await page.evaluate(([yaw,pitch])=>window.__cosmos.skyProbe(yaw,pitch),[yaw,pitch]);assert.ok(sky.whiteFraction<.08&&sky.longestWhiteRow<.3,JSON.stringify(sky));
  }
+ await page.evaluate(()=>window.__cosmos.aimLocalStar());await page.waitForTimeout(250);const starPixel=await page.evaluate(()=>window.__cosmos.skyProbe());assert.ok(starPixel.centerLight>40,'A generated star must be visible in the flight view: '+JSON.stringify(starPixel));
  await page.screenshot({path:'test-output/local-m31-sky.png'});checks.push('M31 sky has no large white walls across six viewing directions');
  const mapBefore=await page.evaluate(()=>window.__cosmos.diagnostics());await page.locator('#neighborhood-view').click();
  await page.waitForFunction(()=>window.__cosmos.diagnostics().starMap.open);await page.screenshot({path:'test-output/local-m31-map.png'});
